@@ -92,20 +92,19 @@ router.post('/log/delegacion/alumno/agregar', async (req, res) => {
 
         if (error) {
             console.error('Error RPC:', error.message);
-            return res.status(500).json({ error: 'Error al procesar la solicitud' });
+            return res.status(500).json({ error: 'Error en RPC' });
         }
 
-        const resultado = data?.[0];
-
-        if (!resultado.id_alumno) {
+        // Si la RPC retornó {"error": "..."}
+        if (data?.error) {
             return res.status(409).json({
-                message: resultado.mensaje || 'Cédula ya registrada'
+                message: data.error
             });
         }
 
         res.status(201).json({
-            message: resultado.mensaje,
-            id: resultado.id_alumno
+            message: data.mensaje,
+            id_alumno: data.id_alumno
         });
 
     } catch (err) {
