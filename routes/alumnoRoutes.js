@@ -79,7 +79,7 @@ router.post('/log/delegacion/alumno/agregar', async (req, res) => {
     } = req.body;
 
     try {
-        const { data, error } = await supabase.rpc('insertar_alumno', {
+        const { data, error } = await supabase.rpc('insertar_alumno_solo', {
             _id_delegacion_fk: id_delegacion_fk,
             _nombre_alumno: nombre_alumno,
             _apellido_alumno: apellido_alumno,
