@@ -79,7 +79,7 @@ router.post('/log/delegacion/alumno/agregar', async (req, res) => {
     } = req.body;
 
     try {
-        const { data, error } = await supabase.rpc('insertar_alumno_solo', {
+        const { error } = await supabase.rpc('insertar_alumno_solo', {
             _id_delegacion_fk: id_delegacion_fk,
             _nombre_alumno: nombre_alumno,
             _apellido_alumno: apellido_alumno,
@@ -90,17 +90,7 @@ router.post('/log/delegacion/alumno/agregar', async (req, res) => {
             _cinturon: cinturon_alumno
         });
 
-        if (error) {
-            console.error('Error RPC:', error.message);
-            return res.status(500).json({ error: 'Error en RPC' });
-        }
-
-        // Si la RPC retornó {"error": "..."}
-        if (data?.error) {
-            return res.status(409).json({
-                message: data.error
-            });
-        }
+        if (error) throw error;
 
         res.status(201).json({
             message: data.mensaje,
