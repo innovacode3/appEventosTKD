@@ -104,7 +104,7 @@ router.put('/log/delegacion/editar/:id', async (req, res) => {
     } = req.body;
 
     try {
-        const { data, error } = await supabase.rpc('editar_delegacion', {
+        const { data, error } = await supabase.rpc('actualizar_delegacion', {
         _id_delegacion: Number(id),
         _nombre_delegacion: nombre_delegacion,
         _nombre_corto: nombre_corto_delegacion,
