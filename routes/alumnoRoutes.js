@@ -73,10 +73,10 @@ router.post('/log/delegacion/alumno/agregar', async (req, res) => {
       nombre_alumno,
       apellido_alumno,
       cedula_alumno,
-      fecha_nacimiento,
-      edad,
-      genero,
-      cinturon,
+      fecha_nacimiento_alumno,
+      edad_alumno,
+      genero_alumno,
+      cinturon_alumno,
     } = req.body;
 
     // LLAMADA CORRECTA A RPC
@@ -85,10 +85,10 @@ router.post('/log/delegacion/alumno/agregar', async (req, res) => {
       _nombre_alumno: nombre_alumno,
       _apellido_alumno: apellido_alumno,
       _cedula_alumno: cedula_alumno,
-      _fecha_nacimiento: fecha_nacimiento,
-      _edad: edad,
-      _genero: genero,
-      _cinturon: cinturon
+      _fecha_nacimiento: fecha_nacimiento_alumno,
+      _edad: edad_alumno,
+      _genero: genero_alumno,
+      _cinturon: cinturon_alumno
     });
 
     if (error) {
@@ -103,7 +103,6 @@ router.post('/log/delegacion/alumno/agregar', async (req, res) => {
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
-
 
 
 //actualizar un alumno
