@@ -12,7 +12,7 @@ router.get('/log/administrador/delegacion/lista', async (req, res) => {
         const { data, error } = await supabase
             .from('registro_delegacion')
             .select('*')
-            .order('nombre_delegacion', { ascending: false })
+            .order('nombre_delegacion', { ascending: true })
         
         if (error) throw error;
         res.json(data);
@@ -90,88 +90,43 @@ router.post('/delegacion/agregar', async (req, res) => {
 
 // Ruta para que delegacion edite sus datos
 router.put('/log/delegacion/editar/:id', async (req, res) => {
-  const { id } = req.params;
-  const {
-    nombre_delegacion,
-    nombre_corto_delegacion,
-    telefono_representante_delegacion,
-    provincia_delegacion,
-    canton_delegacion,
-    nombre_representante_delegacion,
-    cedula_representante_delegacion,
-    correo_representante_delegacion
-  } = req.body;
+    const { id } = req.params;
 
-  try {
-    // Obtener datos actuales
-    const { rows } = await db.query(
-      'SELECT nombre_delegacion, correo_representante_delegacion FROM registro_delegacion WHERE id_delegacion = $1',
-      [id]
-    );
+    const {
+        nombre_delegacion,
+        nombre_corto_delegacion,
+        telefono_representante_delegacion,
+        provincia_delegacion,
+        canton_delegacion,
+        nombre_representante_delegacion,
+        cedula_representante_delegacion,
+        correo_representante_delegacion
+    } = req.body;
 
-    if (rows.length === 0) {
-      return res.status(404).json({ message: 'Delegación no encontrada' });
+    try {
+        const { data, error } = await supabase.rpc('editar_delegacion', {
+        _id_delegacion: Number(id),
+        _nombre_delegacion: nombre_delegacion,
+        _nombre_corto: nombre_corto_delegacion,
+        _telefono_representante: telefono_representante_delegacion,
+        _provincia: provincia_delegacion,
+        _canton: canton_delegacion,
+        _nombre_representante: nombre_representante_delegacion,
+        _cedula_representante: cedula_representante_delegacion,
+        _correo_representante: correo_representante_delegacion
+        });
+
+        if (error) {
+            console.error('Supabase RPC error:', error);
+            return res.status(400).json({ error: error.message });
+        }
+
+        res.json({ ok: true, data });
+
+    } catch (err) {
+        res.status(500).json({ error: err.message || err });
     }
-
-    const current = rows[0];
-
-    // Validaciones
-    if (nombre_delegacion && nombre_delegacion !== current.nombre_delegacion) {
-      const { rows: nombreExists } = await db.query(
-        'SELECT 1 FROM registro_delegacion WHERE nombre_delegacion = $1 AND id_delegacion != $2',
-        [nombre_delegacion, id]
-      );
-      if (nombreExists.length > 0) {
-        return res.status(409).json({ message: 'El nombre de la delegación ya está en uso.' });
-      }
-    }
-
-    if (correo_representante_delegacion && correo_representante_delegacion !== current.correo_representante_delegacion) {
-      const { rows: correoExists } = await db.query(
-        'SELECT 1 FROM registro_delegacion WHERE correo_representante_delegacion = $1 AND id_delegacion != $2',
-        [correo_representante_delegacion, id]
-      );
-      if (correoExists.length > 0) {
-        return res.status(409).json({ message: 'El correo electrónico ya está en uso.' });
-      }
-    }
-
-    // Actualizar la delegación
-    const updateQuery = `
-      UPDATE registro_delegacion SET
-        nombre_delegacion = $1,
-        nombre_corto_delegacion = $2,
-        telefono_representante_delegacion = $3,
-        provincia_delegacion = $4,
-        canton_delegacion = $5,
-        nombre_representante_delegacion = $6,
-        cedula_representante_delegacion = $7,
-        correo_representante_delegacion = $8
-      WHERE id_delegacion = $9
-      RETURNING *;
-    `;
-
-    const values = [
-      nombre_delegacion,
-      nombre_corto_delegacion,
-      telefono_representante_delegacion,
-      provincia_delegacion,
-      canton_delegacion,
-      nombre_representante_delegacion,
-      cedula_representante_delegacion,
-      correo_representante_delegacion,
-      id
-    ];
-
-    const updateResult = await db.query(updateQuery, values);
-    res.json(updateResult.rows[0]);
-
-  } catch (error) {
-    console.error('Error al actualizar delegación:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
-  }
 });
-
 
 // Ruta para eliminar una delegacion (mod admin)
 router.delete('/log/administrador/delegacion/borrar/:id', async (req, res) => {
