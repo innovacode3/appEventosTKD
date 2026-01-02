@@ -10,7 +10,6 @@ const eventoRoutes = require("./routes/eventoRoutes");
 const llavesRoutes = require("./routes/llavesRoutes");
 const presentacionLlavesRoutes = require("./routes/presentacionLlavesRoutes");
 const presentacionResultadosRoutes = require("./routes/presentacionResultadosRoutes");
-const registroAlumnoRoutes = require("./routes/registroAlumnoRoutes");
 const poomsaeInscripcionRoutes = require("./routes/poomsaeInscripcionRoutes");
 const poomsaeResultado = require("./routes/poomsaeResultado");
 const historialCompetencia = require("./routes/historialCompetenciaRoutes");
@@ -44,7 +43,6 @@ app.use(administradorRoutes,
         llavesRoutes,
         presentacionLlavesRoutes,
         presentacionResultadosRoutes,
-        registroAlumnoRoutes,
         poomsaeInscripcionRoutes,
         poomsaeResultado,
         historialCompetencia
