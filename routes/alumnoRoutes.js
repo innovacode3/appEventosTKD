@@ -66,87 +66,44 @@ router.get('/log/delegacion/un_alumno/:id', async (req, res) => {
 })
 
 //agregar un alumno
-/*router.post('/log/delegacion/alumno/agregar', async (req, res) => {
+router.post('/insertar-alumno', async (req, res) => {
+  try {
     const {
-        id_delegacion_fk,
-        nombre_alumno,
-        apellido_alumno,
-        cedula_alumno,
-        fecha_nacimiento_alumno,
-        edad_alumno,
-        genero_alumno,
-        cinturon_alumno
+      id_delegacion_fk,
+      nombre_alumno,
+      apellido_alumno,
+      cedula_alumno,
+      fecha_nacimiento,
+      edad,
+      genero,
+      cinturon,
     } = req.body;
 
-    try {
-        const { data, error } = await supabase.rpc('insertar_alumno_solo', {
-            _id_delegacion_fk: id_delegacion_fk,
-            _nombre_alumno: nombre_alumno,
-            _apellido_alumno: apellido_alumno,
-            _cedula_alumno: cedula_alumno,
-            _fecha_nacimiento: fecha_nacimiento_alumno,
-            _edad: edad_alumno,
-            _genero: genero_alumno,
-            _cinturon: cinturon_alumno
-        });
+    // LLAMADA CORRECTA A RPC
+    const { data, error } = await supabase.rpc('insertar_alumno_solo', {
+      _id_delegacion_fk: id_delegacion_fk,
+      _nombre_alumno: nombre_alumno,
+      _apellido_alumno: apellido_alumno,
+      _cedula_alumno: cedula_alumno,
+      _fecha_nacimiento: fecha_nacimiento,
+      _edad: edad,
+      _genero: genero,
+      _cinturon: cinturon
+    });
 
-        if (error) {
-            console.error("RPC ERROR:", error);
-            return res.status(500).json({ error: "Error en RPC" });
-        }
-
-        // data es un JSON — NO UN ARREGLO
-        if (data.error) {
-            return res.status(409).json({ message: data.error });
-        }
-
-        res.status(201).json({
-            message: data.mensaje,
-            id_alumno: data.id_alumno
-        });
-
-    } catch (err) {
-        res.status(500).json({ error: err.message || err });
+    if (error) {
+      console.error('Supabase RPC error:', error);
+      return res.status(500).json({ error: error.message });
     }
-});*/
-router.post('/log/delegacion/alumno/agregar', async (req, res) => {
-    const params = {
-        _id_delegacion_fk: req.body.id_delegacion_fk,
-        _nombre_alumno: req.body.nombre_alumno,
-        _apellido_alumno: req.body.apellido_alumno,
-        _cedula_alumno: req.body.cedula_alumno,
-        _fecha_nacimiento: req.body.fecha_nacimiento_alumno,
-        _edad: req.body.edad_alumno,
-        _genero: req.body.genero_alumno,
-        _cinturon: req.body.cinturon_alumno
-    };
 
-    console.log("PARAMS ENVIADOS A RPC:", params);
+    res.json({ ok: true, data });
 
-    try {
-        const { data, error } = await supabase.rpc('insertar_alumno_solo', params);
-
-        if (error) {
-            console.error("RPC ERROR FULL:", JSON.stringify(error, null, 2));
-            return res.status(500).json({ error: error.message });
-        }
-
-        console.log("RPC DATA:", data);
-
-        if (data.error) {
-            return res.status(409).json({ message: data.error });
-        }
-
-        res.status(201).json({
-            message: data.mensaje,
-            id_alumno: data.id_alumno
-        });
-
-    } catch (err) {
-        console.error("SERVER ERROR:", err);
-        res.status(500).json({ error: err.message });
-    }
+  } catch (err) {
+    console.error('Server error:', err);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
 });
+
 
 
 //actualizar un alumno
