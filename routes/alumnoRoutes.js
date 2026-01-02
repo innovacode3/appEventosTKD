@@ -122,13 +122,13 @@ router.put('/log/delegacion/alumno/editar/:id', async (req, res) => {
 
     try {
         const { data, error } = await supabase.rpc('actualizar_alumno', {
-            _id_alumno: id,
-            _id_delegacion_fk: id_delegacion_fk,
+            _id_alumno: Number(id),                   // <-- CORREGIDO
+            _id_delegacion_fk: Number(id_delegacion_fk),   // <-- IMPORTANTE
             _nombre_alumno: nombre_alumno,
             _apellido_alumno: apellido_alumno,
             _cedula_alumno: cedula_alumno,
             _fecha_nacimiento: fecha_nacimiento_alumno,
-            _edad: edad_alumno,
+            _edad: Number(edad_alumno),               // <-- IMPORTANTE
             _genero: genero_alumno,
             _cinturon: cinturon_alumno
         });
