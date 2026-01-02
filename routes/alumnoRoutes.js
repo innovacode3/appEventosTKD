@@ -66,7 +66,7 @@ router.get('/log/delegacion/un_alumno/:id', async (req, res) => {
 })
 
 //agregar un alumno
-router.post('/log/delegacion/alumno/agregar', async (req, res) => {
+/*router.post('/log/delegacion/alumno/agregar', async (req, res) => {
     const {
         id_delegacion_fk,
         nombre_alumno,
@@ -108,7 +108,46 @@ router.post('/log/delegacion/alumno/agregar', async (req, res) => {
     } catch (err) {
         res.status(500).json({ error: err.message || err });
     }
+});*/
+router.post('/log/delegacion/alumno/agregar', async (req, res) => {
+    const params = {
+        _id_delegacion_fk: req.body.id_delegacion_fk,
+        _nombre_alumno: req.body.nombre_alumno,
+        _apellido_alumno: req.body.apellido_alumno,
+        _cedula_alumno: req.body.cedula_alumno,
+        _fecha_nacimiento: req.body.fecha_nacimiento_alumno,
+        _edad: req.body.edad_alumno,
+        _genero: req.body.genero_alumno,
+        _cinturon: req.body.cinturon_alumno
+    };
+
+    console.log("PARAMS ENVIADOS A RPC:", params);
+
+    try {
+        const { data, error } = await supabase.rpc('insertar_alumno_solo', params);
+
+        if (error) {
+            console.error("RPC ERROR FULL:", JSON.stringify(error, null, 2));
+            return res.status(500).json({ error: error.message });
+        }
+
+        console.log("RPC DATA:", data);
+
+        if (data.error) {
+            return res.status(409).json({ message: data.error });
+        }
+
+        res.status(201).json({
+            message: data.mensaje,
+            id_alumno: data.id_alumno
+        });
+
+    } catch (err) {
+        console.error("SERVER ERROR:", err);
+        res.status(500).json({ error: err.message });
+    }
 });
+
 
 //actualizar un alumno
 router.put('/log/delegacion/alumno/editar/:id', async (req, res) => {
