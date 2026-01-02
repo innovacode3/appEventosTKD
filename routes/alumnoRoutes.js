@@ -134,22 +134,11 @@ router.put('/log/delegacion/alumno/editar/:id', async (req, res) => {
         });
 
         if (error) {
-            console.error('Error RPC:', error.message);
-            return res.status(500).json({ error: 'Error al procesar la solicitud' });
+            console.error('Supabase RPC error:', error);
+            return res.status(500).json({ error: error.message });
         }
 
-        const resultado = data?.[0];
-
-        if (!resultado.id_alumno) {
-            return res.status(409).json({
-                message: resultado.mensaje || 'No se pudo actualizar el alumno'
-            });
-        }
-
-        res.json({
-            message: resultado.mensaje,
-            id_alumno: resultado.id_alumno
-        });
+        res.json({ ok: true, data });
 
     } catch (err) {
         res.status(500).json({ error: err.message || err });
