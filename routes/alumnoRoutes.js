@@ -66,7 +66,7 @@ router.get('/log/delegacion/un_alumno/:id', async (req, res) => {
 })
 
 //agregar un alumno
-router.post('/insertar-alumno', async (req, res) => {
+router.post('/log/delegacion/alumno/agregar', async (req, res) => {
   try {
     const {
       id_delegacion_fk,
