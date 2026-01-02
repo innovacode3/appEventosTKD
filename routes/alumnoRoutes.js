@@ -90,7 +90,15 @@ router.post('/log/delegacion/alumno/agregar', async (req, res) => {
             _cinturon: cinturon_alumno
         });
 
-        if (error) throw error;
+        if (error) {
+            console.error("RPC ERROR:", error);
+            return res.status(500).json({ error: "Error en RPC" });
+        }
+
+        // data es un JSON — NO UN ARREGLO
+        if (data.error) {
+            return res.status(409).json({ message: data.error });
+        }
 
         res.status(201).json({
             message: data.mensaje,
