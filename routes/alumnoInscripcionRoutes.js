@@ -187,27 +187,5 @@ router.delete('/log/delegacion/evento/combate/alumnoInscripcion/eliminar/:id', a
   }
 });
 
-//Obtener un alumno por cédula
-router.get('/log/delegacion/registro_alumno/ced/:cedula', async (req, res) => {
-    const { cedula } = req.params;
-    try {
-        const { data, error } = await supabase
-            .from('registro_alumno')
-            .select('*')
-            .eq('cedula_alumno', cedula)
-            .single();
-        
-        if (error) {
-          console.error("Error al obtener alumno:", error.message);
-          return res.status(500).json({ error: "Error al obtener los datos" });
-        }
-        if (!data) {
-            return res.status(404).json({ mensaje: 'No hay registro con esa cédula' });
-        }
-        res.json(data);
-    } catch (error) {
-        res.status(500).json({ error: err.message || err });
-    }
-});
 
 module.exports = router;
