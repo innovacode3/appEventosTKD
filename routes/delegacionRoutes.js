@@ -130,29 +130,67 @@ router.put('/log/delegacion/editar/:id', async (req, res) => {
 
 // Ruta para eliminar una delegacion (mod admin)
 router.delete('/log/administrador/delegacion/borrar/:id', async (req, res) => {
-    const { id } = req.params;
-    try {
-        // Primero eliminar de las tablas relacionadas
-        const deleteAlumno = 'DELETE FROM registro_alumno WHERE id_delegacion_fk = $1';
-        await db.query(deleteAlumno, [id]);
+  const { id } = req.params;
 
-        const deleteCombate = 'DELETE FROM suscrito_alumno_evento WHERE id_delegacion_fk = $1';
-        await db.query(deleteCombate, [id]);
+  try {
+    // Eliminar alumnos relacionados
+    const { error: errorAlumno } = await supabase
+      .from('registro_alumno')
+      .delete()
+      .eq('id_delegacion_fk', id);
 
-        const deletePoomsae = 'DELETE FROM suscrito_alumno_poomsae WHERE id_delegacion_fk = $1';
-        await db.query(deletePoomsae, [id]);
-
-        // Luego eliminar la delegacion
-        const deleteDelegacion = 'DELETE FROM registro_delegacion WHERE id_delegacion = $1';
-        await db.query(deleteDelegacion, [id]);
-
-        res.json('Se eliminó correctamente la delegación');
-    } catch (error) {
-        console.error('Error al eliminar la delegación:', error);
-        res.status(500).json({ error: 'Error al eliminar la delegación' });
+    if (errorAlumno) {
+      console.error('Error al eliminar alumnos:', errorAlumno.message);
+      return res.status(500).json({ message: 'Error al eliminar alumnos de la delegación' });
     }
 
-})
+    // Eliminar combates relacionados
+    const { error: errorCombate } = await supabase
+      .from('suscrito_alumno_evento')
+      .delete()
+      .eq('id_delegacion_fk', id);
+
+    if (errorCombate) {
+      console.error('Error al eliminar combates:', errorCombate.message);
+      return res.status(500).json({ message: 'Error al eliminar eventos de la delegación' });
+    }
+
+    // Eliminar poomsae relacionados
+    const { error: errorPoomsae } = await supabase
+      .from('suscrito_alumno_poomsae')
+      .delete()
+      .eq('id_delegacion_fk', id);
+
+    if (errorPoomsae) {
+      console.error('Error al eliminar poomsae:', errorPoomsae.message);
+      return res.status(500).json({ message: 'Error al eliminar poomsae de la delegación' });
+    }
+
+    // Eliminar la delegación
+    const { data, error: errorDelegacion } = await supabase
+      .from('registro_delegacion')
+      .delete()
+      .eq('id_delegacion', id)
+      .select(); // importante para saber si se eliminó algo
+
+    if (errorDelegacion) {
+      console.error('Error al eliminar delegación:', errorDelegacion.message);
+      return res.status(500).json({ message: 'Error al eliminar la delegación' });
+    }
+
+    if (!data || data.length === 0) {
+      return res.status(404).json({ message: 'Delegación no encontrada' });
+    }
+
+    // OK
+    res.json({ message: 'Se eliminó correctamente la delegación' });
+
+  } catch (err) {
+    console.error('Error inesperado:', err);
+    res.status(500).json({ error: err.message || err });
+  }
+});
+
 
 /*************************************************LOGIN DELEGACION*************************************************/
 //ruta para loguearse (entrar al sistema con sus credenciales que provienen del frontend)
