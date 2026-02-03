@@ -252,34 +252,64 @@ router.post('/login/delegacion', async (req, res) => {
 });
 
 //editar contraseña delegacion(delegacion edita su propia contrasena)
-router.put('/log/delegacion/editar/contrasena/:id', (req, res) => {
+router.put('/log/delegacion/editar/contrasena/:id', async (req, res) => {
     const { id } = req.params;
     const { contrasena_actual, contrasena_nueva } = req.body;
-    // Consultar la contraseña almacenada en la base de datos
-    const query = 'SELECT contrasena_delegacion FROM registro_delegacion WHERE id_delegacion = $1';
-    db.query(query, [id], (error, results) => {
-        if (error) return res.status(500).json({ error: error.message });
-        if (results.rows.length === 0) {
-            return res.status(404).json({ message: 'Administrador no encontrado' });
+
+    try {
+        // Obtener contraseña actual desde Supabase
+        const { data: delegacion, error: selectError } = await supabase
+            .from('registro_delegacion')
+            .select('contrasena_delegacion')
+            .eq('id_delegacion', Number(id))
+            .single();
+
+        if (selectError) {
+            return res.status(500).json({ error: selectError.message });
         }
-        const usuario = results.rows[0];
-        // Comparar las contraseñas usando bcrypt
-        bcrypt.compare(contrasena_actual, usuario.contrasena_delegacion, (err, isMatch) => {
-            if (err) return res.status(500).json({ message: 'Error al comparar contraseñas' });
-            // Si las contraseñas no coinciden
-            if (!isMatch) {
-                return res.status(401).json({ message: 'La contraseña actual no es correcta' });
-            }
-            // Si las contraseñas coinciden, hashear la nueva contraseña
-            const hashedNewPassword = bcrypt.hashSync(contrasena_nueva, 10);
-            // Actualizar la contraseña en la base de datos
-            const updateQuery = 'UPDATE registro_delegacion SET contrasena_delegacion = $1 WHERE id_delegacion = $2';
-            db.query(updateQuery, [hashedNewPassword, id], (error) => {
-                if (error) return res.status(500).json({ error: error.message });
-                res.json({ message: 'Contraseña actualizada correctamente' });
+
+        if (!delegacion) {
+            return res.status(404).json({ message: 'Delegación no encontrada' });
+        }
+
+        // Comparar contraseña actual
+        const coincide = await bcrypt.compare(
+            contrasena_actual,
+            delegacion.contrasena_delegacion
+        );
+
+        if (!coincide) {
+            return res.status(401).json({
+                message: 'La contraseña actual no es correcta'
             });
+        }
+
+        // Hashear nueva contraseña
+        const nuevaContrasenaHash = await bcrypt.hash(contrasena_nueva, 10);
+
+        // Actualizar contraseña
+        const { error: updateError } = await supabase
+            .from('registro_delegacion')
+            .update({
+                contrasena_delegacion: nuevaContrasenaHash
+            })
+            .eq('id_delegacion', Number(id));
+
+        if (updateError) {
+            return res.status(500).json({ error: updateError.message });
+        }
+
+        res.json({
+            ok: true,
+            message: 'Contraseña actualizada correctamente'
         });
-    });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({
+            error: err.message || 'Error interno del servidor'
+        });
+    }
 });
 
 module.exports = router;
