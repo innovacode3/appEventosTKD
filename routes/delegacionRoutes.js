@@ -195,25 +195,60 @@ router.delete('/log/administrador/delegacion/borrar/:id', async (req, res) => {
 /*************************************************LOGIN DELEGACION*************************************************/
 //ruta para loguearse (entrar al sistema con sus credenciales que provienen del frontend)
 //aqui se genera un token el cual se almacena en el local storage
-router.post('/login/delegacion', (req, res) => {
-    const { correo_representante_delegacion, contrasena_delegacion } = req.body;
-    // Verificar correo
-    const query = 'SELECT * FROM registro_delegacion WHERE correo_representante_delegacion = $1';
-    db.query(query, [correo_representante_delegacion], (error, results) => {
-        if (error) return res.status(500).json({ error: error.message });
-        if (results.rows.length === 0) return res.status(401).json({ message: 'Credenciales incorrectas' });
+router.post('/login/delegacion', async (req, res) => {
+  const { correo_representante_delegacion, contrasena_delegacion } = req.body;
 
-        const usuario = results.rows[0];
+  try {
+    // Validación básica
+    if (!correo_representante_delegacion || !contrasena_delegacion) {
+      return res.status(400).json({ message: 'Correo y contraseña son obligatorios' });
+    }
 
-        // Verificar la contraseña
-        if (bcrypt.compareSync(contrasena_delegacion, usuario.contrasena_delegacion)) {
-            // Generar el token con el ID de delegación
-            const token = jwt.sign({ id: usuario.id_delegacion }, 'mi_clave_secreta', { expiresIn: '2h' });
-            res.json({ token });
-        } else {
-            res.status(401).json({ message: 'Credenciales incorrectas' });
-        }
+    // Buscar delegación por correo
+    const { data: usuario, error } = await supabase
+      .from('registro_delegacion')
+      .select('*')
+      .eq('correo_representante_delegacion', correo_representante_delegacion)
+      .single(); // esperamos solo uno
+
+    if (error || !usuario) {
+      return res.status(401).json({ message: 'Credenciales incorrectas' });
+    }
+
+    // Comparar contraseña
+    const passwordOk = bcrypt.compareSync(
+      contrasena_delegacion,
+      usuario.contrasena_delegacion
+    );
+
+    if (!passwordOk) {
+      return res.status(401).json({ message: 'Credenciales incorrectas' });
+    }
+
+    // Generar JWT (usa variable de entorno)
+    const token = jwt.sign(
+      {
+        id: usuario.id_delegacion,
+        rol: 'delegacion'
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '2h' }
+    );
+
+    // Respuesta OK
+    res.json({
+      token,
+      delegacion: {
+        id: usuario.id_delegacion,
+        nombre: usuario.nombre_delegacion,
+        correo: usuario.correo_representante_delegacion
+      }
     });
+
+  } catch (err) {
+    console.error('Error login delegación:', err);
+    res.status(500).json({ error: err.message || err });
+  }
 });
 
 //editar contraseña delegacion(delegacion edita su propia contrasena)
