@@ -240,7 +240,8 @@ router.put('/log/administrador/editar_contra_delegacion/:id', async (req, res) =
       const { data, error } = await supabase
           .from('registro_delegacion')
           .update({ contrasena_delegacion: hashedPassword })
-          .eq('id_delegacion', id);
+          .eq('id_delegacion', id)
+          .select();
       // Si hay error en base de datos
       if (error) {
           console.error("Error al actualizar contraseña:", error.message);
