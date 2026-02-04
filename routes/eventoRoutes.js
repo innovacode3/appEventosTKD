@@ -269,34 +269,39 @@ router.post('/log/administrador/evento/agregar', upload.single('imagenEvento'), 
 
 // editar evento
 router.put('/log/administrador/evento/editar/:id', upload.single('imagenEvento'), async (req, res) => {
-    const { id } = req.params;
-    const {
-        titulo_evento,
-        url_reglamento_evento,
-        fecha_limite_inscripcion_evento,
-        estado_evento,
-        direccion_evento,
-        ubicacion_evento,
-        fecha_evento,
-        modalidad_evento,
-        categorias_evento, // <- Añadido aquí
-        nivel_evento,
-        deporte_evento,
-        puntaje_1,
-        puntaje_2,
-        puntaje_3
-    } = req.body;
-
     try {
-        const selectQuery = 'SELECT url_imagen_evento, nombre_imagen_evento FROM evento WHERE id_evento = $1';
-        const selectResult = await db.query(selectQuery, [id]);
+        const { id } = req.params;
+        const {
+            titulo_evento,
+            url_reglamento_evento,
+            fecha_limite_inscripcion_evento,
+            estado_evento,
+            direccion_evento,
+            ubicacion_evento,
+            fecha_evento,
+            modalidad_evento,
+            categorias_evento, // <- Añadido aquí
+            nivel_evento,
+            deporte_evento,
+            puntaje_1,
+            puntaje_2,
+            puntaje_3
+        } = req.body;
 
-        if (selectResult.rows.length === 0) {
-            return res.status(404).json({ message: 'Evento no encontrado' });
+        if (!titulo_evento || !url_reglamento_evento || !fecha_limite_inscripcion_evento || !estado_evento || !direccion_evento || !ubicacion_evento || !fecha_evento || !modalidad_evento
+            || !categorias_evento || !nivel_evento || !deporte_evento || !puntaje_1 || !puntaje_2 || !puntaje_3) {
+            return res.status(400).json({ message: 'Datos inválidos' });
         }
 
-        const oldImageUrl = selectResult.rows[0].url_imagen_evento;
-        const oldImageName = selectResult.rows[0].nombre_imagen_evento;
+        //obtener evento actual
+        const { data, error } = await supabase.from('evento').select('*').eq('id_evento', id).single();
+
+        if (error || !data) {
+            return res.status(400).json({ error: 'El evento no existe' });
+        }
+
+        const oldImageUrl = data.url_imagen_evento;
+        const oldImageName = data.nombre_imagen_evento;
 
         let nuevaUrl = oldImageUrl;
         let nuevoNombreImagen = oldImageName;
@@ -360,108 +365,112 @@ router.put('/log/administrador/evento/editar/:id', upload.single('imagenEvento')
             return res.status(400).json({ message: 'Formato inválido para niveles' });
         }
 
-        const updateQuery = `UPDATE evento SET
-            titulo_evento = $1,
-            url_reglamento_evento = $2,
-            fecha_limite_inscripcion_evento = $3,
-            estado_evento = $4,
-            direccion_evento = $5,
-            ubicacion_evento = $6,
-            fecha_evento = $7,
-            modalidad_evento = $8,
-            url_imagen_evento = $9,
-            nombre_imagen_evento = $10,
-            categorias_evento = $11,
-            nivel_evento = $12,
-            deporte_evento = $13,
-            puntaje_1 = $14,
-            puntaje_2 = $15,
-            puntaje_3 = $16
-            WHERE id_evento = $17`;
+        const { error: errUpdate } = await supabase
+            .from('evento')
+            .update({
+                titulo_evento,
+                url_imagen_evento: nuevaUrl,
+                nombre_imagen_evento: nuevoNombreImagen,
+                url_reglamento_evento,
+                fecha_limite_inscripcion_evento,
+                estado_evento,
+                direccion_evento,
+                ubicacion_evento,
+                fecha_evento,
+                modalidad_evento,
+                categorias_evento: JSON.stringify(categoriasArray),
+                nivel_evento: JSON.stringify(nivelesArray),
+                deporte_evento,
+                puntaje_1,
+                puntaje_2,
+                puntaje_3
+            })
+            .eq('id_evento', id);
+        
+        if (errUpdate) return res.status(400).json(errUpdate);
 
-        const values = [
-            titulo_evento,
-            url_reglamento_evento,
-            fecha_limite_inscripcion_evento,
-            estado_evento,
-            direccion_evento,
-            ubicacion_evento,
-            fecha_evento,
-            modalidad_evento,
-            nuevaUrl,
-            nuevoNombreImagen,
-            JSON.stringify(categoriasArray), // Aquí se guarda como string
-            JSON.stringify(nivelesArray),
-            deporte_evento,
-            puntaje_1,
-            puntaje_2,
-            puntaje_3,
-            id
-        ];
-
-        await db.query(updateQuery, values);
-        res.json({ message: 'Evento actualizado correctamente' });
+        return res.json({
+            message: 'Evento actualizado correctamente'
+        });
 
     } catch (err) {
-        console.error('Error al editar evento:', err);
-        res.status(500).json({ message: 'Error interno del servidor' });
+        console.error(err)
+        res.status(500).json({ message: 'Error al actualizar el evento' });
     }
 });
 
 
 //eliminar evento
 router.delete('/log/evento/borrar/:id', async (req, res) => {
-    const { id } = req.params;
-  
     try {
-      // Obtener el nombre de la imagen del evento
-      const getImageQuery = 'SELECT nombre_imagen_evento FROM evento WHERE id_evento = $1';
-      const result = await db.query(getImageQuery, [id]);
-  
-      if (result.rows.length === 0) {
-        return res.status(404).json({ message: 'Evento no encontrado' });
-      }
-  
-      const nombreImagen = result.rows[0].nombre_imagen_evento;
-  
-      // Eliminar la imagen desde Supabase Storage
-      const { error: deleteError } = await supabase
-        .storage
-        .from('imagenes-eventos')
-        .remove([nombreImagen]);
-  
-      if (deleteError) {
-        console.error('Error al eliminar la imagen de Supabase:', deleteError);
-        return res.status(500).json({ error: 'No se pudo eliminar la imagen del almacenamiento' });
-      }
-  
-      // Primero eliminar las inscripciones relacionadas
-      const deleteSuscritoEvento = 'DELETE FROM suscrito_alumno_evento WHERE id_evento_fk = $1';
-      await db.query(deleteSuscritoEvento, [id]);
-  
-      const deleteSuscritoPoomsae = 'DELETE FROM suscrito_alumno_poomsae WHERE id_evento_fk = $1';
-      await db.query(deleteSuscritoPoomsae, [id]);
+        const { id } = req.params;
 
-      const deleteCompetidorResultado = 'DELETE FROM llaves_competidor_resultado WHERE id_evento_fk = $1';
-      await db.query(deleteCompetidorResultado, [id]);
+        // Validar ID
+        if (!id || isNaN(id)) {
+            return res.status(400).json({ message: 'ID inválido' });
+        }
 
-      const deletePoomsaeResultado = 'DELETE FROM poomsae_resultado WHERE id_evento_fk = $1';
-      await db.query(deletePoomsaeResultado, [id]);
+        // Obtener imagen
+        const { data: evento, error: getError } = await supabase
+            .from('evento')
+            .select('nombre_imagen_evento')
+            .eq('id_evento', id)
+            .single();
 
-      const deletePresentacionLlaves = 'DELETE FROM presentacion_llaves WHERE id_evento_fk = $1';
-      await db.query(deletePresentacionLlaves, [id]);
-  
-      // Luego eliminar el evento
-      const deleteEvento = 'DELETE FROM evento WHERE id_evento = $1';
-      await db.query(deleteEvento, [id]);
-  
-      res.json('Se eliminó correctamente el evento, su imagen y las inscripciones asociadas');
-      
+        if (getError || !evento) {
+            return res.status(404).json({ message: 'Evento no encontrado' });
+        }
+
+        const nombreImagen = evento.nombre_imagen_evento;
+
+        // Eliminar relaciones
+        const tablas = [
+            'suscrito_alumno_evento',
+            'suscrito_alumno_poomsae',
+            'llaves_competidor_resultado',
+            'poomsae_resultado',
+            'presentacion_llaves'
+        ];
+
+        for (const tabla of tablas) {
+            const { error } = await supabase
+                .from(tabla)
+                .delete()
+                .eq('id_evento_fk', id);
+
+            if (error) {
+                throw new Error(`Error eliminando en ${tabla}`);
+            }
+        }
+
+        // Eliminar evento
+        const { error: deleteEventoError } = await supabase
+            .from('evento')
+            .delete()
+            .eq('id_evento', id);
+
+        if (deleteEventoError) {
+            throw deleteEventoError;
+        }
+
+        // Eliminar imagen
+        const { error: deleteImgError } = await supabase
+            .storage
+            .from('imagenes-eventos')
+            .remove([nombreImagen]);
+
+        if (deleteImgError) {
+            throw deleteImgError;
+        }
+
+        res.json({ message: 'Evento eliminado correctamente' });
+
     } catch (error) {
-      console.error('Error al eliminar el evento:', error);
-      res.status(500).json({ error: 'Error al eliminar el evento' });
+        console.error(error);
+        res.status(500).json({ message: 'Error al eliminar el evento' });
     }
 });
+
 
 //obtener delegaciones registradas a un evento
 router.get('/evento/lista_delegaciones/:id_evento', (req, res) => {
