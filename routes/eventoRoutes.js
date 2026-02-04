@@ -289,7 +289,7 @@ router.put('/log/administrador/evento/editar/:id', upload.single('imagenEvento')
         } = req.body;
 
         if (!titulo_evento || !url_reglamento_evento || !fecha_limite_inscripcion_evento || !estado_evento || !direccion_evento || !ubicacion_evento || !fecha_evento || !modalidad_evento
-            || !categorias_evento || !nivel_evento || !deporte_evento || !puntaje_1 || !puntaje_2 || !puntaje_3) {
+            || !categorias_evento || !nivel_evento || !deporte_evento || puntaje_1 === undefined || puntaje_2 === undefined || puntaje_3 === undefined) {
             return res.status(400).json({ message: 'Datos inválidos' });
         }
 
@@ -365,7 +365,7 @@ router.put('/log/administrador/evento/editar/:id', upload.single('imagenEvento')
             return res.status(400).json({ message: 'Formato inválido para niveles' });
         }
 
-        const { error: errUpdate } = await supabase
+        const { data: eventoActualizado, error: errUpdate } = await supabase
             .from('evento')
             .update({
                 titulo_evento,
@@ -385,12 +385,15 @@ router.put('/log/administrador/evento/editar/:id', upload.single('imagenEvento')
                 puntaje_2,
                 puntaje_3
             })
-            .eq('id_evento', id);
+            .eq('id_evento', id)
+            .selec()
+            .single();
         
         if (errUpdate) return res.status(400).json(errUpdate);
 
         return res.json({
-            message: 'Evento actualizado correctamente'
+            message: 'Evento actualizado correctamente',
+            evento: eventoActualizado
         });
 
     } catch (err) {
