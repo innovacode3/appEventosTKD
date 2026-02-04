@@ -63,117 +63,87 @@ router.get('/public/evento/lista', async (req, res) => {
 });
 
 //logueado obtener evento por ID en mod delegacion (esto al momento de registrarse en un evento a los alumnos, el id del evento pasa a ser fk)
-router.get('/log/delegacion/evento/registro/:id', (req, res) => {
+router.get('/log/delegacion/evento/registro/:id', async (req, res) => {
     const { id } = req.params;
-    const query = 'SELECT * FROM evento WHERE id_evento = $1';
-    db.query(query, [id], (error, resultado) => {
+
+    try {
+
+        const { data, error } = await supabase
+            .from('evento')
+            .select('*')
+            .eq('id_evento', id)
+            .single(); // Porque es solo 1 evento
+
         if (error) {
-            console.error("Error al obtener los eventos: ", error.message)
-            return res.status(500).json({ error: "Error al obtener los datos" });
+
+            // Si no encuentra el registro
+            if (error.code === 'PGRST116') {
+                return res.status(404).json({
+                    message: 'Evento no encontrado'
+                });
+            }
+
+            console.error('Error al obtener evento:', error);
+            return res.status(500).json({
+                error: 'Error al obtener los datos'
+            });
         }
-        //Siempre devuelve un array aunque esté vacío
-        res.json(resultado.rows)  
-    });
+
+        // Devuelve un solo objeto
+        res.json(data);
+
+    } catch (err) {
+
+        console.error('Error general:', err);
+
+        res.status(500).json({
+            error: err.message || err
+        });
+    }
 });
+
 //publico obtener evento por ID
 //verificar si estoy usando esta ruta
-router.get('/public/evento/:id', (req, res) => {
+router.get('/public/evento/:id', async (req, res) => {
     const { id } = req.params;
-    const query = 'SELECT * FROM evento WHERE id_evento = $1';
-    db.query(query, [id], (error, resultado) => {
+
+    try {
+
+        const { data, error } = await supabase
+            .from('evento')
+            .select('*')
+            .eq('id_evento', id)
+            .eq('estado_evento', 'Visible') // Solo eventos visibles
+            .single();
+
         if (error) {
-            console.error("Error al obtener los eventos: ", error.message)
-            return res.status(500).json({ error: "Error al obtener los datos" });
+
+            if (error.code === 'PGRST116') {
+                return res.status(404).json({
+                    message: 'Evento no encontrado'
+                });
+            }
+
+            console.error('Error al obtener evento:', error);
+
+            return res.status(500).json({
+                error: 'Error al obtener los datos'
+            });
         }
-        //Siempre devuelve un array aunque esté vacío
-        res.json(resultado.rows)  
-    });
+
+        res.json(data);
+
+    } catch (err) {
+
+        console.error('Error general:', err);
+
+        res.status(500).json({
+            error: err.message || err
+        });
+    }
 });
 
 //agregar evento
-/*router.post('/log/administrador/evento/agregar', upload.single('imagenEvento'), async (req, res) => {
-    try {
-        // Verificar que la imagen fue proporcionada
-        if (!req.file) {
-            console.log('No se ha proporcionado ninguna imagen');
-            return res.status(400).json({ message: 'No se ha proporcionado ninguna imagen.' });
-        }
-
-        const imagenNombreEvento = req.file.originalname;
-
-        // Verificar si ya existe una imagen con ese nombre en Supabase
-        const { data: existente, error: existingError } = await supabase
-            .storage
-            .from('imagenes-eventos')
-            .list('', { search: imagenNombreEvento });
-
-        if (existingError) {
-            console.error('Error al verificar existencia de imagen:', existingError.message);
-            return res.status(500).json({ message: 'Error al verificar la existencia de la imagen en Supabase.' });
-        }
-
-        if (existente.length > 0) {
-            console.log('La imagen ya existe en Supabase');
-            return res.status(400).json({ message: 'Esta imagen ya está registrada en la base de datos. Por favor, cargue una imagen con otro nombre.' });
-        }
-
-        // Subir la imagen directamente a Supabase Storage sin guardarla localmente
-        const buffer = await sharp(req.file.buffer).toBuffer(); // Usar el buffer directamente desde el archivo cargado
-        const { error: uploadError } = await supabase
-            .storage
-            .from('imagenes-eventos')
-            .upload(imagenNombreEvento, buffer, {
-                contentType: req.file.mimetype,
-                upsert: false // No reemplazar la imagen si ya existe
-            });
-
-        if (uploadError) {
-            console.error('Error al subir la imagen a Supabase:', uploadError.message);
-            return res.status(500).json({ message: 'Error al subir la imagen a Supabase.' });
-        }
-
-        // Generar la URL pública de la imagen en Supabase
-        const urlPublica = `${process.env.SUPABASE_URL}/storage/v1/object/public/imagenes-eventos/${imagenNombreEvento}`;
-
-        // Crear objeto de evento
-        const evento = {
-            titulo_evento: req.body.titulo_evento,
-            url_imagen_evento: urlPublica,
-            nombre_imagen_evento: imagenNombreEvento,
-            url_reglamento_evento: req.body.url_reglamento_evento,
-            fecha_limite_inscripcion_evento: req.body.fecha_limite_inscripcion_evento,
-            estado_evento: req.body.estado_evento,
-            direccion_evento: req.body.direccion_evento,
-            ubicacion_evento: req.body.ubicacion_evento,
-            fecha_evento: req.body.fecha_evento,
-            modalidad_evento: req.body.modalidad_evento
-        };
-
-        // Validar que los campos necesarios estén presentes
-        if (!evento.titulo_evento || !evento.url_imagen_evento || !evento.fecha_evento) {
-            console.log('Faltan datos obligatorios en el evento');
-            return res.status(400).json({ message: 'Faltan datos obligatorios en la solicitud.' });
-        }
-
-        // Insertar evento en la base de datos
-        const insertQuery = `INSERT INTO evento (titulo_evento, url_imagen_evento, nombre_imagen_evento, url_reglamento_evento, fecha_limite_inscripcion_evento, estado_evento, direccion_evento, ubicacion_evento, fecha_evento, modalidad_evento) 
-                             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`;
-        const values = Object.values(evento);
-
-        db.query(insertQuery, values, (insertError) => {
-            if (insertError) {
-                console.error('Error al insertar evento en la base de datos:', insertError.message);
-                return res.status(500).json({ message: 'Error al guardar el evento en la base de datos.' });
-            }
-
-            console.log('Evento creado correctamente');
-            res.json({ message: 'Evento creado correctamente' });
-        });
-    } catch (err) {
-        console.error('Error interno del servidor:', err.message);
-        res.status(500).json({ message: 'Error interno del servidor' });
-    }
-});*/
 router.post('/log/administrador/evento/agregar', upload.single('imagenEvento'), async (req, res) => {
     try {
         if (!req.file) {
@@ -242,48 +212,59 @@ router.post('/log/administrador/evento/agregar', upload.single('imagenEvento'), 
             nivelesEvento = [];
         }
 
-        const evento = {
-            titulo_evento: req.body.titulo_evento,
-            url_imagen_evento: urlPublica,
-            nombre_imagen_evento: imagenNombreEvento,
-            url_reglamento_evento: req.body.url_reglamento_evento,
-            fecha_limite_inscripcion_evento: req.body.fecha_limite_inscripcion_evento,
-            estado_evento: req.body.estado_evento,
-            direccion_evento: req.body.direccion_evento,
-            ubicacion_evento: req.body.ubicacion_evento,
-            fecha_evento: req.body.fecha_evento,
-            modalidad_evento: req.body.modalidad_evento,
-            categorias_evento: JSON.stringify(categoriasEvento),
-            nivel_evento: JSON.stringify(nivelesEvento),
-            deporte_evento: req.body.deporte_evento,
-            puntaje_1: req.body.puntaje_1,
-            puntaje_2: req.body.puntaje_2,
-            puntaje_3: req.body.puntaje_3
-        };
+        const {
+            titulo_evento,
+            url_imagen_evento,
+            nombre_imagen_evento,
+            url_reglamento_evento,
+            fecha_limite_inscripcion_evento,
+            estado_evento,
+            direccion_evento,
+            ubicacion_evento,
+            fecha_evento,
+            modalidad_evento,
+            categorias_evento,
+            nivel_evento,
+            deporte_evento,
+            puntaje_1,
+            puntaje_2,
+            puntaje_3
+        } = req.body;
 
-        if (!evento.titulo_evento || !evento.url_imagen_evento || !evento.fecha_evento) {
+        if (!titulo_evento || !url_imagen_evento || !fecha_evento) {
             console.log('Faltan datos obligatorios en el evento');
             return res.status(400).json({ message: 'Faltan datos obligatorios en la solicitud.' });
         }
 
-        const insertQuery = `INSERT INTO evento 
-            (titulo_evento, url_imagen_evento, nombre_imagen_evento, url_reglamento_evento, fecha_limite_inscripcion_evento, estado_evento, direccion_evento, ubicacion_evento, fecha_evento, modalidad_evento, categorias_evento, nivel_evento, deporte_evento, puntaje_1, puntaje_2, puntaje_3) 
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`;
+        const { data, error } = await supabase
+            .from('evento')
+            .insert([{
+                titulo_evento,
+                url_imagen_evento: urlPublica,
+                nombre_imagen_evento: imagenNombreEvento,
+                url_reglamento_evento,
+                fecha_limite_inscripcion_evento,
+                estado_evento,
+                direccion_evento,
+                ubicacion_evento,
+                fecha_evento,
+                modalidad_evento,
+                categorias_evento: JSON.stringify(categoriasEvento),
+                nivel_evento: JSON.stringify(nivelesEvento),
+                deporte_evento,
+                puntaje_1,
+                puntaje_2,
+                puntaje_3
+            }])
+            .select()
+            .single();
+        
+        if (error) return res.status(400).json(error)
+        res.json(data)
 
-        const values = Object.values(evento);
-
-        db.query(insertQuery, values, (insertError) => {
-            if (insertError) {
-                console.error('Error al insertar evento en la base de datos:', insertError.message);
-                return res.status(500).json({ message: 'Error al guardar el evento en la base de datos.' });
-            }
-
-            console.log('Evento creado correctamente');
-            res.json({ message: 'Evento creado correctamente' });
-        });
     } catch (err) {
-        console.error('Error interno del servidor:', err.message);
-        res.status(500).json({ message: 'Error interno del servidor' });
+        console.error(err);
+        res.status(500).json({ message: 'Error al crear el evento' });
     }
 });
 
