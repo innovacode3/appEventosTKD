@@ -214,8 +214,6 @@ router.post('/log/administrador/evento/agregar', upload.single('imagenEvento'), 
 
         const {
             titulo_evento,
-            url_imagen_evento,
-            nombre_imagen_evento,
             url_reglamento_evento,
             fecha_limite_inscripcion_evento,
             estado_evento,
@@ -231,7 +229,7 @@ router.post('/log/administrador/evento/agregar', upload.single('imagenEvento'), 
             puntaje_3
         } = req.body;
 
-        if (!titulo_evento || !url_imagen_evento || !nombre_imagen_evento || !url_reglamento_evento || !fecha_limite_inscripcion_evento || !estado_evento || !direccion_evento || !ubicacion_evento || !fecha_evento || !modalidad_evento
+        if (!titulo_evento || !url_reglamento_evento || !fecha_limite_inscripcion_evento || !estado_evento || !direccion_evento || !ubicacion_evento || !fecha_evento || !modalidad_evento
             || !categorias_evento || !nivel_evento || !deporte_evento || !puntaje_1 || !puntaje_2 || !puntaje_3) {
             return res.status(400).json({ message: 'Datos inválidos' });
         }
