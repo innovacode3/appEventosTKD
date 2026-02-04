@@ -7,18 +7,33 @@ const upload = multer(); // Usamos memoria (sin archivos físicos)
 const router = express.Router();
 
 const db = dbConnect();
-//listar todos los eventos logueado modoo administrador
-router.get('/log/administrador/evento/lista', (req, res) => {
-    const query = 'SELECT * FROM evento';
-    db.query(query, (error, resultado) => {
+//listar todos los eventos logueado modo administrador
+router.get('/log/administrador/evento/lista', async (req, res) => {
+    try {
+
+        const { data, error } = await supabase
+            .from('evento')
+            .select('*')
+            .order('fecha_evento', { ascending: false }); // false = más recientes primero
+
         if (error) {
-            console.error("Error al obtener los eventos: ", error.message)
-            return res.status(500).json({ error: "Error al obtener los datos" });
+            console.error('Error al obtener eventos:', error);
+            return res.status(500).json({
+                error: 'Error al obtener los datos'
+            });
         }
-        //Siempre devuelve un array aunque esté vacío
-        res.json(resultado.rows)  
-    });
+
+        // Siempre devuelve array (aunque esté vacío)
+        res.json(data);
+
+    } catch (err) {
+        console.error('Error general:', err);
+        res.status(500).json({
+            error: err.message || err
+        });
+    }
 });
+
 //listar todos los eventos modo publico
 router.get('/public/evento/lista', (req, res) => {
     const query = "SELECT * FROM evento WHERE estado_evento = 'Visible'";
