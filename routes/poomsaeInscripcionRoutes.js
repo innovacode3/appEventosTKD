@@ -1,90 +1,95 @@
 const express = require('express');
 const dbConnect = require('../db/connect');
-
 const router = express.Router();
 const db = dbConnect();
+// conexión supabase
+const supabase = require('../db/supabaseClient');
+const crypto = require('crypto');
 
 //Obtener alumnos poomsae inscritos
-router.get('/log/delegacion/evento/poomsae/poomsae_inscripcion/:id_evento_fk/:id_delegacion_fk', (req, res) => {
-    const { id_evento_fk, id_delegacion_fk } = req.params;
-    const sql = `SELECT * FROM suscrito_alumno_poomsae 
-                 WHERE id_evento_fk = $1 AND id_delegacion_fk = $2
-                 ORDER BY
-                    CASE
-                        WHEN categoria_suscrito_alumno_poomsae = 'PRE INFANTIL' THEN 1
-                        WHEN categoria_suscrito_alumno_poomsae = 'PRE CADETES A' THEN 2
-                        WHEN categoria_suscrito_alumno_poomsae = 'PRE CADETES B' THEN 3
-                        WHEN categoria_suscrito_alumno_poomsae = 'PRE CADETES C' THEN 4
-                        WHEN categoria_suscrito_alumno_poomsae = 'CADETES' THEN 5
-                        WHEN categoria_suscrito_alumno_poomsae = 'PREJUVENIL' THEN 6
-                        WHEN categoria_suscrito_alumno_poomsae = 'JUVENIL U22' THEN 7
-                        WHEN categoria_suscrito_alumno_poomsae = 'SENIOR' THEN 8
-                        ELSE 9
-                    END,
-                    CASE
-                        WHEN genero_suscrito_alumno_poomsae = 'Masculino' THEN 1
-                        WHEN genero_suscrito_alumno_poomsae = 'Femenino' THEN 2
-                        ELSE 3
-                    END,
-                    CASE
-                        WHEN cinturon_suscrito_alumno_poomsae = 'Blanco' THEN 1
-                        WHEN cinturon_suscrito_alumno_poomsae = 'Blanco-Amarillo' THEN 2
-                        WHEN cinturon_suscrito_alumno_poomsae = 'Amarillo' THEN 3
-                        WHEN cinturon_suscrito_alumno_poomsae = 'Amarillo-Verde' THEN 4
-                        WHEN cinturon_suscrito_alumno_poomsae = 'Verde' THEN 5
-                        WHEN cinturon_suscrito_alumno_poomsae = 'Verde-Azul' THEN 6
-                        WHEN cinturon_suscrito_alumno_poomsae = 'Azul' THEN 7
-                        WHEN cinturon_suscrito_alumno_poomsae = 'Azul-Rojo' THEN 8
-                        WHEN cinturon_suscrito_alumno_poomsae = 'Rojo' THEN 9
-                        WHEN cinturon_suscrito_alumno_poomsae = 'Rojo-Negro' THEN 10
-                        WHEN cinturon_suscrito_alumno_poomsae = 'Negro' THEN 10
-                    END`;
-    db.query(sql, [id_evento_fk, id_delegacion_fk], (err, result) => {
-        if (err) {
-            console.error("Error al obtener alumnos inscritos: ", err.message);
-            return res.status(500).json({ error: "Error al obtener los datos" });
+router.get('/log/delegacion/evento/poomsae/poomsae_inscripcion/:id_evento_fk/:id_delegacion_fk', async (req, res) => {
+
+    try {
+
+        const { id_evento_fk, id_delegacion_fk } = req.params;
+
+        const { data, error } = await supabase
+            .rpc('get_poomsae_inscritos_ordenados', {
+                p_evento: id_evento_fk,
+                p_delegacion: id_delegacion_fk
+            });
+
+        if (error) {
+            console.error('Error RPC poomsae:', error);
+            return res.status(500).json({
+                message: 'Error al obtener los inscritos',
+                error
+            });
         }
-        if (result.rows.length > 0) {
-            res.json(result.rows);
-        } else {
-            res.status(404).json({ mensaje: "No hay registros" });
+
+        if (!data || data.length === 0) {
+            return res.status(404).json({
+                message: 'No hay registros'
+            });
         }
-    });
+
+        return res.json(data);
+
+    } catch (err) {
+        console.error('Error servidor:', err);
+
+        return res.status(500).json({
+            message: 'Error interno del servidor'
+        });
+    }
+
 });
+
 
 // Verificar si el alumno ya está inscrito por cédula
-router.get('/log/delegacion/evento/poomsae/poomsae_Inscripcion/cedula/:id_evento_fk/:cedula', (req, res) => {
-    const { id_evento_fk, cedula } = req.params;
-    const sql = `SELECT cedula_suscrito_alumno_poomsae FROM suscrito_alumno_poomsae WHERE id_evento_fk = $1 AND cedula_suscrito_alumno_poomsae = $2`;
-    db.query(sql, [id_evento_fk, cedula], (err, result) => {
-        if (err) {
-            return res.status(500).json({ error: "Error al obtener los datos" });
+router.get('/log/delegacion/evento/poomsae/poomsae_Inscripcion/cedula/:id_evento_fk/:cedula', async (req, res) => {
+
+    try {
+
+        const { id_evento_fk, cedula } = req.params;
+
+        const { data, error } = await supabase
+            .from('suscrito_alumno_poomsae')
+            .select('cedula_suscrito_alumno_poomsae')
+            .eq('id_evento_fk', id_evento_fk)
+            .eq('cedula_suscrito_alumno_poomsae', cedula)
+            .limit(1);
+
+        if (error) {
+            console.error('Error Supabase:', error);
+
+            return res.status(500).json({
+                message: 'Error al consultar inscripción'
+            });
         }
-        if (result.rows.length > 0) {
-            // Si existe un alumno con esa cédula, respondemos que está inscrito
-            return res.json(true);
-        } else {
-            // Si no se encuentra ningún alumno, respondemos que no está inscrito
-            return res.json(false);
-        }
-    });
+
+        // Si existe → true | si no → false
+        const existe = data && data.length > 0;
+
+        return res.json(existe);
+
+    } catch (err) {
+
+        console.error('Error servidor:', err);
+
+        return res.status(500).json({
+            message: 'Error interno del servidor'
+        });
+
+    }
+
 });
 
-//Agregar alumno inscrito poomsae
-router.post('/log/delegacion/evento/poomsae/poomsae_Inscripcion/agregar', (req, res) => {
-    const {
-        cedula_suscrito_alumno_poomsae,
-        id_evento_fk,
-        id_delegacion_fk,
-        nombres_suscrito_alumno_poomsae,
-        apellidos_suscrito_alumno_poomsae,
-        edad_suscrito_alumno_poomsae,
-        categoria_suscrito_alumno_poomsae,
-        genero_suscrito_alumno_poomsae,
-        cinturon_suscrito_alumno_poomsae
-    } = req.body;
-    const sql = `
-        INSERT INTO suscrito_alumno_poomsae (
+
+//Agregar alumno inscrito poomsae INDIVIDUAL
+router.post('/log/delegacion/evento/poomsae/poomsae_Inscripcion/agregar', async (req, res) => {
+    try {
+        const {
             cedula_suscrito_alumno_poomsae,
             id_evento_fk,
             id_delegacion_fk,
@@ -94,106 +99,198 @@ router.post('/log/delegacion/evento/poomsae/poomsae_Inscripcion/agregar', (req, 
             categoria_suscrito_alumno_poomsae,
             genero_suscrito_alumno_poomsae,
             cinturon_suscrito_alumno_poomsae
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`;
-    const values = [
-        cedula_suscrito_alumno_poomsae,
-        id_evento_fk,
-        id_delegacion_fk,
-        nombres_suscrito_alumno_poomsae,
-        apellidos_suscrito_alumno_poomsae,
-        edad_suscrito_alumno_poomsae,
-        categoria_suscrito_alumno_poomsae,
-        genero_suscrito_alumno_poomsae,
-        cinturon_suscrito_alumno_poomsae
-    ];
-    db.query(sql, values, (err, result) => {
-        if (err) {
-            console.error("Error al insertar el alumno:", err.message);
-            return res.status(500).json({ error: "Error al insertar el alumno" });
-        }
-        res.json('Se insertó correctamente el usuario');
-    });
+        } = req.body;
+
+        const { data, error } = await supabase
+            .from('suscrito_alumno_poomsae')
+            .insert([{
+                cedula_suscrito_alumno_poomsae,
+                id_evento_fk,
+                id_delegacion_fk,
+                nombres_suscrito_alumno_poomsae,
+                apellidos_suscrito_alumno_poomsae,
+                edad_suscrito_alumno_poomsae,
+                categoria_suscrito_alumno_poomsae,
+                genero_suscrito_alumno_poomsae,
+                cinturon_suscrito_alumno_poomsae,
+                modalidad: 'INDIVIDUAL'
+            }]);
+
+        if (error) throw error;
+        res.json(data);
+
+    } catch (err) {
+        res.status(500).json({ error: err.message || err });
+    }
 });
 
+// Agregar alumno inscrito poomsae MIXTO|TRIOS|FREESTYLE
+router.post('/log/delegacion/evento/poomsae/grupal', async (req, res) => {
+    try {
+        const {
+            modalidad, // PAREJA | EQUIPO | FREESTYLE_*
+            participantes // array de alumnos
+        } = req.body;
+
+        const equipo_id = crypto.randomUUID();
+
+        const registros = participantes.map(p => ({
+            cedula_suscrito_alumno_poomsae: p.cedula_suscrito_alumno_poomsae,
+            id_evento_fk: p.id_evento_fk,
+            id_delegacion_fk: p.id_delegacion_fk,
+            nombres_suscrito_alumno_poomsae: p.nombres_suscrito_alumno_poomsae,
+            apellidos_suscrito_alumno_poomsae: p.apellidos_suscrito_alumno_poomsae,
+            edad_suscrito_alumno_poomsae: p.edad_suscrito_alumno_poomsae,
+            categoria_suscrito_alumno_poomsae: p.categoria_suscrito_alumno_poomsae,
+            genero_suscrito_alumno_poomsae: p.genero_suscrito_alumno_poomsae,
+            cinturon_suscrito_alumno_poomsae: p.cinturon_suscrito_alumno_poomsae,
+            modalidad,
+            equipo_id
+        }));
+
+        const { data, error } = await supabase
+            .from('suscrito_alumno_poomsae')
+            .insert(registros);
+
+        if (error) throw error;
+        res.json({ equipo_id, inscritos: data });
+
+    } catch (err) {
+        res.status(500).json({ error: err.message || err });
+    }
+})
+
+//Listar inscritos por modalidad
+router.get('/log/delegacion/evento/poomsae/lista/:id_evento_fk/:id_delegacion_fk/:modalidad', async (req, res) => {
+    try {
+        const { id_evento_fk, id_delegacion_fk, modalidad } = req.params;
+
+        const { data, error } = await supabase
+            .from('suscrito_alumno_poomsae')
+            .select('*')
+            .eq('id_evento_fk', id_evento_fk)
+            .eq('id_delegacion_fk', id_delegacion_fk)
+            .eq('modalidad', modalidad)
+            .order('apellidos_suscrito_alumno_poomsae', { ascending: true });
+
+        if (error) throw error;
+        res.json(data);
+
+    } catch (err) {
+        res.status(500).json({ error: err.message || err });
+    }
+});
 
 //Editar alumno inscrito poomsae
-router.put('/log/delegacion/evento/poomsae/poomsae_Inscripcion/actualizar/:id', (req, res) => {
-    const { id } = req.params;
-    const {
-        cedula_suscrito_alumno_poomsae,
-        id_evento_fk,
-        id_delegacion_fk,
-        nombres_suscrito_alumno_poomsae,
-        apellidos_suscrito_alumno_poomsae,
-        edad_suscrito_alumno_poomsae,
-        categoria_suscrito_alumno_poomsae,
-        genero_suscrito_alumno_poomsae,
-        cinturon_suscrito_alumno_poomsae
-    } = req.body;
-    const sql = `
-        UPDATE suscrito_alumno_poomsae
-        SET
-            cedula_suscrito_alumno_poomsae = $1,
-            id_evento_fk = $2,
-            id_delegacion_fk = $3,
-            nombres_suscrito_alumno_poomsae = $4,
-            apellidos_suscrito_alumno_poomsae = $5,
-            edad_suscrito_alumno_poomsae = $6,
-            categoria_suscrito_alumno_poomsae = $7,
-            genero_suscrito_alumno_poomsae = $8,
-            cinturon_suscrito_alumno_poomsae = $9
-        WHERE id_suscrito_alumno_poomsae = $10`;
-    const values = [
-        cedula_suscrito_alumno_poomsae,
-        id_evento_fk,
-        id_delegacion_fk,
-        nombres_suscrito_alumno_poomsae,
-        apellidos_suscrito_alumno_poomsae,
-        edad_suscrito_alumno_poomsae,
-        categoria_suscrito_alumno_poomsae,
-        genero_suscrito_alumno_poomsae,
-        cinturon_suscrito_alumno_poomsae,
-        id
-    ];
-    db.query(sql, values, (err, result) => {
-        if (err) {
-            console.error("Error al actualizar el alumno:", err.message);
-            return res.status(500).json({ error: "Error al actualizar el alumno" });
+router.put('/log/delegacion/evento/poomsae/poomsae_Inscripcion/actualizar/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const {
+            cedula_suscrito_alumno_poomsae,
+            id_evento_fk,
+            id_delegacion_fk,
+            nombres_suscrito_alumno_poomsae,
+            apellidos_suscrito_alumno_poomsae,
+            edad_suscrito_alumno_poomsae,
+            categoria_suscrito_alumno_poomsae,
+            genero_suscrito_alumno_poomsae,
+            cinturon_suscrito_alumno_poomsae
+        } = req.body;
+
+        // Update con Supabase
+        const { data, error } = await supabase
+            .from('suscrito_alumno_poomsae')
+            .update({
+                cedula_suscrito_alumno_poomsae,
+                id_evento_fk,
+                id_delegacion_fk,
+                nombres_suscrito_alumno_poomsae,
+                apellidos_suscrito_alumno_poomsae,
+                edad_suscrito_alumno_poomsae,
+                categoria_suscrito_alumno_poomsae,
+                genero_suscrito_alumno_poomsae,
+                cinturon_suscrito_alumno_poomsae
+            })
+            .eq('id_suscrito_alumno_poomsae', id)
+            .select()
+            .single();
+
+
+        if (error) {
+            console.error('Error Supabase:', error);
+            return res.status(500).json({
+                message: 'Error al actualizar el alumno'
+            });
         }
-        res.json('Se actualizó correctamente el alumno inscrito');
-    });
+
+        // No encontró registro
+        if (!data) {
+            return res.status(404).json({ message: 'Alumno no encontrado' });
+        }
+
+        return res.json({
+            message: 'Se actualizó correctamente el alumno inscrito',
+            data
+        });
+
+    } catch (err) {
+        console.error('Error servidor:', err);
+
+        return res.status(500).json({ message: 'Error interno del servidor' });
+    }
 });
 
 //Eliminar alumno inscrito poomsae
-router.delete('/log/delegacion/evento/poomsae/poomsae_Inscripcion/eliminar/:id', (req, res) => {
-    const { id } = req.params;
-    const sql = `DELETE FROM suscrito_alumno_poomsae WHERE id_suscrito_alumno_poomsae = $1`;
-    db.query(sql, [id], (err, result) => {
-        if (err) {
-            console.error("Error al eliminar el alumno:", err.message);
-            return res.status(500).json({ error: "Error al eliminar el alumno" });
+router.delete('/log/delegacion/evento/poomsae/poomsae_Inscripcion/eliminar/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const { error } = await supabase
+            .from('suscrito_alumno_poomsae')
+            .delete()
+            .eq('id_suscrito_alumno_poomsae', id)
+
+        if (error) {
+            console.error("Error al eliminar la inscripción de poomsae:", error.message);
+            return res.status(500).json({ error: "Error al eliminar los datos" });
         }
-        res.json('Se eliminó correctamente el alumno inscrito');
-    });
+        res.json({ message: 'Inscripción eliminada correctamente' });
+
+    } catch (err) {
+        res.status(500).json({ error: err.message || err });
+    }
 });
 
 //Obtener el total de los competidores inscritos en poomsae
-router.get('/evento/poomsae/obtenerTotalCompetidores/:id_evento/:categoria/:cinturon', (req, res) => {
-    const { id_evento, categoria, cinturon } = req.params;
-    const sql = `SELECT COUNT(*) AS total_competidores
-                    FROM suscrito_alumno_poomsae
-                    WHERE id_evento_fk = $1 AND categoria_suscrito_alumno_poomsae = $2 AND cinturon_suscrito_alumno_poomsae = $3`;
-    db.query(sql, [id_evento, categoria, cinturon], (err, result) => {
-        if (err) {
-            console.error('Error al obtener el total de competidores:', err);
-            return res.status(500).send('Error interno del servidor');
+router.get('/evento/poomsae/obtenerTotalCompetidores/:id_evento/:categoria/:cinturon', async (req, res) => {
+    try {
+        const { id_evento, categoria, cinturon } = req.params;
+
+        // Count con Supabase
+        const { count, error } = await supabase
+            .from('suscrito_alumno_poomsae')
+            .select('*', { count: 'exact', head: true })
+            .eq('id_evento_fk', id_evento)
+            .eq('categoria_suscrito_alumno_poomsae', categoria)
+            .eq('cinturon_suscrito_alumno_poomsae', cinturon);
+
+        if (error) {
+            console.error('Error Supabase:', error);
+
+            return res.status(500).json({ message: 'Error al obtener el total de competidores' });
         }
-        if(result.rows.length > 0) {
-            res.json(result.rows[0].total_competidores);
-        } else {
-            res.status(404).json({ mensaje: "No se puede contabilizar" });
-        }
-    });
+
+        // Siempre devuelve número (aunque sea 0)
+        return res.json({
+            total_competidores: count || 0
+        });
+
+    } catch (err) {
+        console.error('Error servidor:', err);
+
+        return res.status(500).json({ message: 'Error interno del servidor'});
+    }
 });
 
 //Obtener categoria y cinturón para los filtros
