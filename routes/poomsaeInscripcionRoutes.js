@@ -310,10 +310,12 @@ router.get('/evento/poomsae/obtenerCategoriaCinturon/:id_evento_fk', (req, res) 
                         WHEN categoria_suscrito_alumno_poomsae = 'PRE CADETES B' THEN 3
                         WHEN categoria_suscrito_alumno_poomsae = 'PRE CADETES C' THEN 4
                         WHEN categoria_suscrito_alumno_poomsae = 'CADETES' THEN 5
-                        WHEN categoria_suscrito_alumno_poomsae = 'PREJUVENIL' THEN 6
-                        WHEN categoria_suscrito_alumno_poomsae = 'JUVENIL U22' THEN 7
-                        WHEN categoria_suscrito_alumno_poomsae = 'SENIOR' THEN 8
-                        ELSE 9
+                        WHEN categoria_suscrito_alumno_poomsae = 'JUNIOR' THEN 6
+                        WHEN categoria_suscrito_alumno_poomsae = 'SENIOR 1' THEN 7
+                        WHEN categoria_suscrito_alumno_poomsae = 'SENIOR 2' THEN 8
+                        WHEN categoria_suscrito_alumno_poomsae = 'MASTER 1' THEN 9
+                        WHEN categoria_suscrito_alumno_poomsae = 'MASTER 2' THEN 10
+                        ELSE 11
                     END,
                     CASE 
                         WHEN cinturon_suscrito_alumno_poomsae = 'Blanco' THEN 1
@@ -379,10 +381,12 @@ router.get('/evento/poomsae/obtenerFiltradas/:id_evento/:categoria/:cinturon', (
                         WHEN categoria_suscrito_alumno_poomsae = 'PRE CADETES B' THEN 3
                         WHEN categoria_suscrito_alumno_poomsae = 'PRE CADETES C' THEN 4
                         WHEN categoria_suscrito_alumno_poomsae = 'CADETES' THEN 5
-                        WHEN categoria_suscrito_alumno_poomsae = 'PREJUVENIL' THEN 6
-                        WHEN categoria_suscrito_alumno_poomsae = 'JUVENIL U22' THEN 7
-                        WHEN categoria_suscrito_alumno_poomsae = 'SENIOR' THEN 8
-                        ELSE 9
+                        WHEN categoria_suscrito_alumno_poomsae = 'JUNIOR' THEN 6
+                        WHEN categoria_suscrito_alumno_poomsae = 'SENIOR 1' THEN 7
+                        WHEN categoria_suscrito_alumno_poomsae = 'SENIOR 2' THEN 8
+                        WHEN categoria_suscrito_alumno_poomsae = 'MASTER 1' THEN 9
+                        WHEN categoria_suscrito_alumno_poomsae = 'MASTER 2' THEN 10
+                        ELSE 11
                     END,
                     CASE
                         WHEN genero_suscrito_alumno_poomsae = 'Masculino' THEN 1
@@ -461,10 +465,12 @@ router.get('/log/administrador/evento/listaPoomsae/:id_evento_fk', (req, res) =>
         WHEN categoria_suscrito_alumno_poomsae = 'PRE CADETES B' THEN 3
         WHEN categoria_suscrito_alumno_poomsae = 'PRE CADETES C' THEN 4
         WHEN categoria_suscrito_alumno_poomsae = 'CADETES' THEN 5
-        WHEN categoria_suscrito_alumno_poomsae = 'PREJUVENIL' THEN 6
-        WHEN categoria_suscrito_alumno_poomsae = 'JUVENIL U22' THEN 7
-        WHEN categoria_suscrito_alumno_poomsae = 'SENIOR' THEN 8
-        ELSE 9
+        WHEN categoria_suscrito_alumno_poomsae = 'JUNIOR' THEN 6
+        WHEN categoria_suscrito_alumno_poomsae = 'SENIOR 1' THEN 7
+        WHEN categoria_suscrito_alumno_poomsae = 'SENIOR 2' THEN 8
+        WHEN categoria_suscrito_alumno_poomsae = 'MASTER 1' THEN 9
+        WHEN categoria_suscrito_alumno_poomsae = 'MASTER 2' THEN 10
+        ELSE 11
       END,
       CASE
         WHEN genero_suscrito_alumno_poomsae = 'Masculino' THEN 1
