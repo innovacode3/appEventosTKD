@@ -92,7 +92,8 @@ router.post('/log/delegacion/evento/poomsae/poomsae_Inscripcion/agregar', async 
             edad_suscrito_alumno_poomsae,
             categoria_suscrito_alumno_poomsae,
             genero_suscrito_alumno_poomsae,
-            cinturon_suscrito_alumno_poomsae
+            cinturon_suscrito_alumno_poomsae,
+            fnacimiento_suscrito_alumno_poomsae
         } = req.body;
 
         const { data, error } = await supabase
@@ -107,6 +108,7 @@ router.post('/log/delegacion/evento/poomsae/poomsae_Inscripcion/agregar', async 
                 categoria_suscrito_alumno_poomsae,
                 genero_suscrito_alumno_poomsae,
                 cinturon_suscrito_alumno_poomsae,
+                fnacimiento_suscrito_alumno_poomsae,
                 modalidad: 'INDIVIDUAL'
             }]);
 
@@ -138,6 +140,7 @@ router.post('/log/delegacion/evento/poomsae/grupal', async (req, res) => {
             categoria_suscrito_alumno_poomsae: p.categoria_suscrito_alumno_poomsae,
             genero_suscrito_alumno_poomsae: p.genero_suscrito_alumno_poomsae,
             cinturon_suscrito_alumno_poomsae: p.cinturon_suscrito_alumno_poomsae,
+            fnacimiento_suscrito_alumno_poomsae: p.fnacimiento_suscrito_alumno_poomsae,
             modalidad,
             equipo_id
         }));
@@ -189,7 +192,8 @@ router.put('/log/delegacion/evento/poomsae/poomsae_Inscripcion/actualizar/:id', 
             edad_suscrito_alumno_poomsae,
             categoria_suscrito_alumno_poomsae,
             genero_suscrito_alumno_poomsae,
-            cinturon_suscrito_alumno_poomsae
+            cinturon_suscrito_alumno_poomsae,
+            fnacimiento_suscrito_alumno_poomsae
         } = req.body;
 
         // Update con Supabase
@@ -204,7 +208,8 @@ router.put('/log/delegacion/evento/poomsae/poomsae_Inscripcion/actualizar/:id', 
                 edad_suscrito_alumno_poomsae,
                 categoria_suscrito_alumno_poomsae,
                 genero_suscrito_alumno_poomsae,
-                cinturon_suscrito_alumno_poomsae
+                cinturon_suscrito_alumno_poomsae,
+                fnacimiento_suscrito_alumno_poomsae
             })
             .eq('id_suscrito_alumno_poomsae', id)
             .select()
