@@ -27,12 +27,6 @@ router.get('/log/delegacion/evento/poomsae/poomsae_inscripcion/:id_evento_fk/:id
             });
         }
 
-        if (!data || data.length === 0) {
-            return res.status(404).json({
-                message: 'No hay registros'
-            });
-        }
-
         return res.json(data);
 
     } catch (err) {
