@@ -386,7 +386,7 @@ router.put('/log/administrador/evento/editar/:id', upload.single('imagenEvento')
                 puntaje_3
             })
             .eq('id_evento', id)
-            .selec()
+            .select()
             .single();
         
         if (errUpdate) return res.status(400).json(errUpdate);
