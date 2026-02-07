@@ -79,6 +79,28 @@ router.get('/log/delegacion/evento/poomsae/poomsae_Inscripcion/cedula/:id_evento
 
 });
 
+//Obtener las inscripciones pero por la cedula
+router.get('/log/delegacion/evento/poomsae/poomsaeInscripcion/buscarCedula/:id_evento_fk/:cedula', async (req, res) => {
+    const { id_evento_fk, cedula } = req.params;
+    try {
+        const { data, error } = await supabase
+            .from('suscrito_alumno_poomsae')
+            .select('*')
+            .eq('id_evento_fk', id_evento_fk)
+            .eq('cedula_suscrito_alumno_poomsae', cedula);
+        if (error) {
+            console.error("Error al obtener alumno:", error.message);
+            return res.status(500).json({ error: "Error al obtener los datos" });
+        }
+        if (!data || data.length === 0) {
+            return res.status(404).json({ mensaje: 'No hay registro con esa cédula' });
+        }
+        res.json(data);
+    } catch (err) {
+        res.status(500).json({ error: err.message || err });
+    }
+})
+
 
 //Agregar alumno inscrito poomsae INDIVIDUAL
 router.post('/log/delegacion/evento/poomsae/poomsae_Inscripcion/agregar', async (req, res) => {
