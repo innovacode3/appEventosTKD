@@ -131,7 +131,7 @@ router.post('/log/delegacion/evento/poomsae/poomsae_Inscripcion/agregar', async 
                 genero_suscrito_alumno_poomsae,
                 cinturon_suscrito_alumno_poomsae,
                 fnacimiento_suscrito_alumno_poomsae,
-                modalidad: 'INDIVIDUAL'
+                modalidad: 'Individual'
             }]);
 
         if (error) throw error;
