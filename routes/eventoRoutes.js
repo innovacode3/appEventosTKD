@@ -185,6 +185,20 @@ router.post('/log/administrador/evento/agregar', upload.single('imagenEvento'), 
         const urlPublica = `${process.env.SUPABASE_URL}/storage/v1/object/public/imagenes-eventos/${imagenNombreEvento}`;
 
         // Asegurarse de que se reciba como array desde el frontend
+        let modalidadesEvento;
+        try {
+            modalidadesEvento = typeof req.body.modalidad_evento === 'string'
+                ? JSON.parse(req.body.modalidad_evento)
+                : req.body.modalidad_evento;
+
+            if (!Array.isArray(modalidadesEvento)) {
+                modalidadesEvento = [modalidadesEvento];
+            }
+        } catch (e) {
+            modalidadesEvento = [];
+        }
+
+        // Asegurarse de que se reciba como array desde el frontend
         let categoriasEvento;
         try {
             categoriasEvento = typeof req.body.categorias_evento === 'string'
@@ -246,7 +260,7 @@ router.post('/log/administrador/evento/agregar', upload.single('imagenEvento'), 
                 direccion_evento,
                 ubicacion_evento,
                 fecha_evento,
-                modalidad_evento,
+                modalidad_evento: modalidadesEvento,
                 categorias_evento: categoriasEvento,
                 nivel_evento: nivelesEvento,
                 deporte_evento,
@@ -343,6 +357,17 @@ router.put('/log/administrador/evento/editar/:id', upload.single('imagenEvento')
             }
         }
 
+        // Convertir modalidades a array (si vienen como string) y luego a JSON
+        let modalidadesArray = [];
+        try {
+            modalidadesArray = Array.isArray(modalidad_evento)
+                ? modalidad_evento
+                : JSON.parse(modalidad_evento || '[]');
+        } catch (e) {
+            console.error('Error al parsear modalidad_evento:', e);
+            return res.status(400).json({ message: 'Formato inválido para modalidades' });
+        }
+
         // Convertir categorías a array (si vienen como string) y luego a JSON
         let categoriasArray = [];
         try {
@@ -354,7 +379,7 @@ router.put('/log/administrador/evento/editar/:id', upload.single('imagenEvento')
             return res.status(400).json({ message: 'Formato inválido para categorías' });
         }
 
-        // Convertir categorías a array (si vienen como string) y luego a JSON
+        // Convertir niveles a array (si vienen como string) y luego a JSON
         let nivelesArray = [];
         try {
             nivelesArray = Array.isArray(nivel_evento)
@@ -377,7 +402,7 @@ router.put('/log/administrador/evento/editar/:id', upload.single('imagenEvento')
                 direccion_evento,
                 ubicacion_evento,
                 fecha_evento,
-                modalidad_evento,
+                modalidad_evento: modalidadesArray,
                 categorias_evento: categoriasArray,
                 nivel_evento: nivelesArray,
                 deporte_evento,
