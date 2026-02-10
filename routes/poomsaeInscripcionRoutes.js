@@ -45,7 +45,7 @@ router.get('/log/delegacion/evento/poomsae/poomsae_Inscripcion/cedula/:id_evento
 
     try {
 
-        const { id_evento_fk, cedula, modalidad } = req.params;
+        const { id_evento_fk, cedula } = req.params;
 
         const { data, error } = await supabase
             .from('suscrito_alumno_poomsae')
@@ -178,6 +178,153 @@ router.post('/log/delegacion/evento/poomsae/grupal', async (req, res) => {
         res.status(500).json({ error: err.message || err });
     }
 })
+
+
+
+router.post('/poomsae/inscribir', async (req, res) => {
+
+    const {
+        id_evento_fk,
+        modalidad,
+        categoria,
+        participantes
+    } = req.body;
+
+    try {
+
+        // ===============================
+        // VALIDACIONES
+        // ===============================
+
+        /* ---------- INDIVIDUAL ---------- */
+        if (
+        modalidad === 'Individual' ||
+        modalidad === 'Freestyle-Individual'
+        ) {
+
+        if (participantes.length !== 1) {
+            return res.status(400).json({
+            ok: false,
+            msg: 'Individual solo permite 1 participante'
+            });
+        }
+
+        const cedula = participantes[0].cedula_suscrito_alumno_poomsae;
+
+        const { data: existe } = await supabase
+            .from('suscrito_alumno_poomsae')
+            .select('id_suscrito_alumno_poomsae')
+            .eq('id_evento_fk', id_evento_fk)
+            .eq('cedula_suscrito_alumno_poomsae', cedula)
+            .eq('categoria_suscrito_alumno_poomsae', categoria);
+
+        if (existe.length > 0) {
+            return res.status(400).json({
+            ok: false,
+            msg: 'Este alumno ya está inscrito en esta categoría'
+            });
+        }
+        }
+
+
+        /* ---------- MIXTO ---------- */
+        if (
+            modalidad === 'Mixto' ||
+            modalidad === 'Freestyle-Mixto'
+        ) {
+
+        if (participantes.length !== 2) {
+            return res.status(400).json({
+            ok: false,
+            msg: 'Mixto debe tener 2 participantes'
+            });
+        }
+
+        const generos = participantes.map(p => p.genero_suscrito_alumno_poomsae);
+
+        if (
+            !generos.includes('Masculino') ||
+            !generos.includes('Femenino')
+        ) {
+            return res.status(400).json({
+            ok: false,
+            msg: 'Debe ser masculino y femenino'
+            });
+        }
+        }
+
+
+        /* ---------- EQUIPO ---------- */
+        if (
+            modalidad === 'Equipo' ||
+            modalidad === 'Freestyle-Equipo'
+        ) {
+
+        if (participantes.length !== 3) {
+            return res.status(400).json({
+            ok: false,
+            msg: 'Equipo debe tener 3 participantes'
+            });
+        }
+
+        const generos = participantes.map(p => p.genero_suscrito_alumno_poomsae);
+
+        const todosM = generos.every(g => g === 'Masculino');
+        const todosF = generos.every(g => g === 'Femenino');
+
+        if (!todosM && !todosF) {
+            return res.status(400).json({
+            ok: false,
+            msg: 'Todos deben ser del mismo género'
+            });
+        }
+        }
+
+
+        // ===============================
+        // GUARDAR
+        // ===============================
+
+        const registros = participantes.map(p => ({
+            id_evento_fk: id_evento_fk,
+            id_delegacion_fk: p.id_delegacion_fk,
+            cedula_suscrito_alumno_poomsae: p.cedula_suscrito_alumno_poomsae,
+            nombres_suscrito_alumno_poomsae: p.nombres_suscrito_alumno_poomsae,
+            apellidos_suscrito_alumno_poomsae: p.apellidos_suscrito_alumno_poomsae,
+            edad_suscrito_alumno_poomsae: p.edad_suscrito_alumno_poomsae,
+            genero_suscrito_alumno_poomsae: p.genero_suscrito_alumno_poomsae,
+            categoria_suscrito_alumno_poomsae: categoria,
+            cinturon_suscrito_alumno_poomsae: p.cinturon_suscrito_alumno_poomsae,
+            fnacimiento_suscrito_alumno_poomsae: p.fnacimiento_suscrito_alumno_poomsae,
+            modalidad
+        }));
+
+        const { error } = await supabase
+        .from('suscrito_alumno_poomsae')
+        .insert(registros);
+
+        if (error) throw error;
+
+
+        return res.json({
+            ok: true,
+            msg: 'Inscripción realizada'
+        });
+
+
+    } catch (err) {
+
+        console.error(err);
+
+        res.status(500).json({
+            ok: false,
+            msg: 'Error del servidor'
+        });
+
+    }
+
+});
+
 
 //Listar inscritos por modalidad
 router.get('/log/delegacion/evento/poomsae/lista/:id_evento_fk/:id_delegacion_fk/:modalidad', async (req, res) => {
