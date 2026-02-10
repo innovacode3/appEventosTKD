@@ -181,134 +181,164 @@ router.post('/log/delegacion/evento/poomsae/grupal', async (req, res) => {
 
 
 
-router.post('/poomsae/inscribir', async (req, res) => {
-
-    const {
-        id_evento_fk,
-        modalidad,
-        categoria,
-        participantes
-    } = req.body;
+// INSCRIBIR POOMSAE (INDIVIDUAL / MIXTO / EQUIPO / FREESTYLE)
+router.post('/log/delegacion/evento/poomsae/inscribir', async (req, res) => {
 
     try {
 
-        // ===============================
-        // VALIDACIONES
-        // ===============================
+        const {
+            modalidad,
+            participantes // array
+        } = req.body;
 
-        /* ---------- INDIVIDUAL ---------- */
-        if (
-        modalidad === 'Individual' ||
-        modalidad === 'Freestyle-Individual'
-        ) {
-
-        if (participantes.length !== 1) {
+        if (!modalidad || !Array.isArray(participantes) || participantes.length === 0) {
             return res.status(400).json({
-            ok: false,
-            msg: 'Individual solo permite 1 participante'
+                ok: false,
+                msg: 'Datos incompletos'
             });
         }
 
-        const cedula = participantes[0].cedula_suscrito_alumno_poomsae;
+        const {
+            id_evento_fk
+        } = participantes[0];
 
-        const { data: existe } = await supabase
-            .from('suscrito_alumno_poomsae')
-            .select('id_suscrito_alumno_poomsae')
-            .eq('id_evento_fk', id_evento_fk)
-            .eq('cedula_suscrito_alumno_poomsae', cedula)
-            .eq('categoria_suscrito_alumno_poomsae', categoria);
 
-        if (existe.length > 0) {
-            return res.status(400).json({
-            ok: false,
-            msg: 'Este alumno ya está inscrito en esta categoría'
+        /* VALIDACIONES */
+
+        // INDIVIDUAL
+        if (modalidad === 'Individual' || modalidad === 'Freestyle-Individual') {
+
+            if (participantes.length !== 1) {
+                return res.status(400).json({
+                    ok: false,
+                    msg: 'Debe existir un solo participante'
+                });
+            }
+
+            const p = participantes[0];
+
+            // Validar categoría repetida
+            const { data: existe } = await supabase
+                .from('suscrito_alumno_poomsae')
+                .select('id_suscrito_alumno_poomsae')
+                .eq('id_evento_fk', p.id_evento_fk)
+                .eq('cedula_suscrito_alumno_poomsae', p.cedula_suscrito_alumno_poomsae)
+                .eq('modalidad', modalidad)
+                .eq('categoria_suscrito_alumno_poomsae', p.categoria_suscrito_alumno_poomsae)
+                .limit(1);
+
+            if (existe.length > 0) {
+                return res.status(400).json({
+                    ok: false,
+                    msg: 'Ya está inscrito en esta categoría'
+                });
+            }
+        }
+
+        // MIXTO
+        if (modalidad === 'Mixto' || modalidad === 'Freestyle-Mixto') {
+
+            if (participantes.length !== 2) {
+                return res.status(400).json({
+                    ok: false,
+                    msg: 'Debe registrar exactamente 2 participantes'
+                });
+            }
+
+            const categorias = new Set();
+            const generos = new Set();
+
+            participantes.forEach(p => {
+                categorias.add(p.categoria_suscrito_alumno_poomsae);
+                generos.add(p.genero_suscrito_alumno_poomsae);
             });
+
+            if (categorias.size !== 1) {
+                return res.status(400).json({
+                    ok: false,
+                    msg: 'Ambos deben ser de la misma categoría'
+                });
+            }
+
+            if (!(generos.has('Masculino') && generos.has('Femenino'))) {
+                return res.status(400).json({
+                    ok: false,
+                    msg: 'Debe haber un masculino y una femenina'
+                });
+            }
         }
-        }
 
+        // EQUIPO
+        if (modalidad === 'Equipo' || modalidad === 'Freestyle-Equipo') {
 
-        /* ---------- MIXTO ---------- */
-        if (
-            modalidad === 'Mixto' ||
-            modalidad === 'Freestyle-Mixto'
-        ) {
+            if (participantes.length !== 3) {
+                return res.status(400).json({
+                    ok: false,
+                    msg: 'Debe registrar exactamente 3 participantes'
+                });
+            }
 
-        if (participantes.length !== 2) {
-            return res.status(400).json({
-            ok: false,
-            msg: 'Mixto debe tener 2 participantes'
+            const categorias = new Set();
+            const generos = new Set();
+
+            participantes.forEach(p => {
+                categorias.add(p.categoria_suscrito_alumno_poomsae);
+                generos.add(p.genero_suscrito_alumno_poomsae);
             });
-        }
 
-        const generos = participantes.map(p => p.genero_suscrito_alumno_poomsae);
+            if (categorias.size !== 1) {
+                return res.status(400).json({
+                    ok: false,
+                    msg: 'Todos deben ser de la misma categoría'
+                });
+            }
 
-        if (
-            !generos.includes('Masculino') ||
-            !generos.includes('Femenino')
-        ) {
-            return res.status(400).json({
-            ok: false,
-            msg: 'Debe ser masculino y femenino'
-            });
-        }
-        }
-
-
-        /* ---------- EQUIPO ---------- */
-        if (
-            modalidad === 'Equipo' ||
-            modalidad === 'Freestyle-Equipo'
-        ) {
-
-        if (participantes.length !== 3) {
-            return res.status(400).json({
-            ok: false,
-            msg: 'Equipo debe tener 3 participantes'
-            });
-        }
-
-        const generos = participantes.map(p => p.genero_suscrito_alumno_poomsae);
-
-        const todosM = generos.every(g => g === 'Masculino');
-        const todosF = generos.every(g => g === 'Femenino');
-
-        if (!todosM && !todosF) {
-            return res.status(400).json({
-            ok: false,
-            msg: 'Todos deben ser del mismo género'
-            });
-        }
+            if (generos.size !== 1) {
+                return res.status(400).json({
+                    ok: false,
+                    msg: 'Todos deben ser del mismo género'
+                });
+            }
         }
 
 
-        // ===============================
-        // GUARDAR
-        // ===============================
+        /* =========================
+           INSERCIÓN
+        ========================= */
+
+        const equipo_id = crypto.randomUUID();
 
         const registros = participantes.map(p => ({
-            id_evento_fk: id_evento_fk,
-            id_delegacion_fk: p.id_delegacion_fk,
+
             cedula_suscrito_alumno_poomsae: p.cedula_suscrito_alumno_poomsae,
+            id_evento_fk: p.id_evento_fk,
+            id_delegacion_fk: p.id_delegacion_fk,
+
             nombres_suscrito_alumno_poomsae: p.nombres_suscrito_alumno_poomsae,
             apellidos_suscrito_alumno_poomsae: p.apellidos_suscrito_alumno_poomsae,
+
             edad_suscrito_alumno_poomsae: p.edad_suscrito_alumno_poomsae,
+            categoria_suscrito_alumno_poomsae: p.categoria_suscrito_alumno_poomsae,
             genero_suscrito_alumno_poomsae: p.genero_suscrito_alumno_poomsae,
-            categoria_suscrito_alumno_poomsae: categoria,
             cinturon_suscrito_alumno_poomsae: p.cinturon_suscrito_alumno_poomsae,
             fnacimiento_suscrito_alumno_poomsae: p.fnacimiento_suscrito_alumno_poomsae,
-            modalidad
+
+            modalidad,
+            equipo_id
+
         }));
 
-        const { error } = await supabase
-        .from('suscrito_alumno_poomsae')
-        .insert(registros);
+
+        const { data, error } = await supabase
+            .from('suscrito_alumno_poomsae')
+            .insert(registros);
 
         if (error) throw error;
 
 
-        return res.json({
+        res.json({
             ok: true,
-            msg: 'Inscripción realizada'
+            inscritos: data
         });
 
 
@@ -318,9 +348,8 @@ router.post('/poomsae/inscribir', async (req, res) => {
 
         res.status(500).json({
             ok: false,
-            msg: 'Error del servidor'
+            msg: 'Error interno'
         });
-
     }
 
 });
@@ -353,32 +382,14 @@ router.put('/log/delegacion/evento/poomsae/poomsae_Inscripcion/actualizar/:id', 
         const { id } = req.params;
 
         const {
-            cedula_suscrito_alumno_poomsae,
-            id_evento_fk,
-            id_delegacion_fk,
-            nombres_suscrito_alumno_poomsae,
-            apellidos_suscrito_alumno_poomsae,
-            edad_suscrito_alumno_poomsae,
             categoria_suscrito_alumno_poomsae,
-            genero_suscrito_alumno_poomsae,
-            cinturon_suscrito_alumno_poomsae,
-            fnacimiento_suscrito_alumno_poomsae
         } = req.body;
 
         // Update con Supabase
         const { data, error } = await supabase
             .from('suscrito_alumno_poomsae')
             .update({
-                cedula_suscrito_alumno_poomsae,
-                id_evento_fk,
-                id_delegacion_fk,
-                nombres_suscrito_alumno_poomsae,
-                apellidos_suscrito_alumno_poomsae,
-                edad_suscrito_alumno_poomsae,
-                categoria_suscrito_alumno_poomsae,
-                genero_suscrito_alumno_poomsae,
-                cinturon_suscrito_alumno_poomsae,
-                fnacimiento_suscrito_alumno_poomsae
+                categoria_suscrito_alumno_poomsae
             })
             .eq('id_suscrito_alumno_poomsae', id)
             .select()
