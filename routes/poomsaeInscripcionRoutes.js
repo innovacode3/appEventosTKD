@@ -41,7 +41,7 @@ router.get('/log/delegacion/evento/poomsae/poomsae_inscripcion/:id_evento_fk/:id
 
 
 // Verificar si el alumno ya está inscrito por cédula
-router.get('/log/delegacion/evento/poomsae/poomsae_Inscripcion/cedula/:id_evento_fk/:cedula/:modalidad', async (req, res) => {
+router.get('/log/delegacion/evento/poomsae/poomsae_Inscripcion/cedula/:id_evento_fk/:cedula', async (req, res) => {
 
     try {
 
@@ -49,10 +49,9 @@ router.get('/log/delegacion/evento/poomsae/poomsae_Inscripcion/cedula/:id_evento
 
         const { data, error } = await supabase
             .from('suscrito_alumno_poomsae')
-            .select('cedula_suscrito_alumno_poomsae')
+            .select('cedula_suscrito_alumno_poomsae, modalidad')
             .eq('id_evento_fk', id_evento_fk)
             .eq('cedula_suscrito_alumno_poomsae', cedula)
-            .eq('modalidad', modalidad)
             .limit(1);
 
         if (error) {
