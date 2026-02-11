@@ -39,10 +39,28 @@ router.get('/log/delegacion/evento/poomsae/poomsae_inscripcion/:id_evento_fk/:id
 
 });
 
+//Para obtener el alumno inscrito por id
+router.get('/log/delegacion/evento/poomsae/:id', async (req, res) => {
+
+    const { id } = req.params;
+
+    const { data, error } = await supabase
+        .from('suscrito_alumno_poomsae')
+        .select('*')
+        .eq('id_suscrito_alumno_poomsae', id)
+        .single();
+
+    if (error) {
+        return res.status(404).json({ msg: 'No encontrado' });
+    }
+
+    res.json(data);
+
+});
+
 
 // Verificar si el alumno ya está inscrito por cédula
 router.get('/log/delegacion/evento/poomsae/poomsae_Inscripcion/cedula/:id_evento_fk/:cedula', async (req, res) => {
-
     try {
 
         const { id_evento_fk, cedula } = req.params;
@@ -102,94 +120,10 @@ router.get('/log/delegacion/evento/poomsae/poomsaeInscripcion/buscarCedula/:id_e
 })
 
 
-//Agregar alumno inscrito poomsae INDIVIDUAL
-router.post('/log/delegacion/evento/poomsae/poomsae_Inscripcion/agregar', async (req, res) => {
-    try {
-        const {
-            cedula_suscrito_alumno_poomsae,
-            id_evento_fk,
-            id_delegacion_fk,
-            nombres_suscrito_alumno_poomsae,
-            apellidos_suscrito_alumno_poomsae,
-            edad_suscrito_alumno_poomsae,
-            categoria_suscrito_alumno_poomsae,
-            genero_suscrito_alumno_poomsae,
-            cinturon_suscrito_alumno_poomsae,
-            fnacimiento_suscrito_alumno_poomsae
-        } = req.body;
-
-        const { data, error } = await supabase
-            .from('suscrito_alumno_poomsae')
-            .insert([{
-                cedula_suscrito_alumno_poomsae,
-                id_evento_fk,
-                id_delegacion_fk,
-                nombres_suscrito_alumno_poomsae,
-                apellidos_suscrito_alumno_poomsae,
-                edad_suscrito_alumno_poomsae,
-                categoria_suscrito_alumno_poomsae,
-                genero_suscrito_alumno_poomsae,
-                cinturon_suscrito_alumno_poomsae,
-                fnacimiento_suscrito_alumno_poomsae,
-                modalidad: 'Individual'
-            }]);
-
-        if (error) throw error;
-        res.json(data);
-
-    } catch (err) {
-        res.status(500).json({ error: err.message || err });
-    }
-});
-
-// Agregar alumno inscrito poomsae MIXTO|TRIOS|FREESTYLE
-router.post('/log/delegacion/evento/poomsae/grupal', async (req, res) => {
-    try {
-        const {
-            modalidad, // PAREJA | EQUIPO | FREESTYLE_*
-            participantes // array de alumnos
-        } = req.body;
-
-        const equipo_id = crypto.randomUUID();
-
-        const registros = participantes.map(p => ({
-            cedula_suscrito_alumno_poomsae: p.cedula_suscrito_alumno_poomsae,
-            id_evento_fk: p.id_evento_fk,
-            id_delegacion_fk: p.id_delegacion_fk,
-            nombres_suscrito_alumno_poomsae: p.nombres_suscrito_alumno_poomsae,
-            apellidos_suscrito_alumno_poomsae: p.apellidos_suscrito_alumno_poomsae,
-            edad_suscrito_alumno_poomsae: p.edad_suscrito_alumno_poomsae,
-            categoria_suscrito_alumno_poomsae: p.categoria_suscrito_alumno_poomsae,
-            genero_suscrito_alumno_poomsae: p.genero_suscrito_alumno_poomsae,
-            cinturon_suscrito_alumno_poomsae: p.cinturon_suscrito_alumno_poomsae,
-            fnacimiento_suscrito_alumno_poomsae: p.fnacimiento_suscrito_alumno_poomsae,
-            modalidad,
-            equipo_id
-        }));
-
-        const { data, error } = await supabase
-            .from('suscrito_alumno_poomsae')
-            .insert(registros);
-
-        if (error) throw error;
-        res.json({ equipo_id, inscritos: data });
-
-    } catch (err) {
-        res.status(500).json({ error: err.message || err });
-    }
-})
-
-
-
 // INSCRIBIR POOMSAE (INDIVIDUAL / MIXTO / EQUIPO / FREESTYLE)
 router.post('/log/delegacion/evento/poomsae/inscribir', async (req, res) => {
-
     try {
-
-        const {
-            modalidad,
-            participantes // array
-        } = req.body;
+        const {modalidad, participantes } = req.body; //participantes es un array
 
         if (!modalidad || !Array.isArray(participantes) || participantes.length === 0) {
             return res.status(400).json({
@@ -201,9 +135,6 @@ router.post('/log/delegacion/evento/poomsae/inscribir', async (req, res) => {
         const {
             id_evento_fk
         } = participantes[0];
-
-
-        /* VALIDACIONES */
 
         // INDIVIDUAL
         if (modalidad === 'Individual' || modalidad === 'Freestyle-Individual') {
@@ -301,10 +232,6 @@ router.post('/log/delegacion/evento/poomsae/inscribir', async (req, res) => {
             }
         }
 
-
-        /* =========================
-           INSERCIÓN
-        ========================= */
 
         const equipo_id = crypto.randomUUID();
 
