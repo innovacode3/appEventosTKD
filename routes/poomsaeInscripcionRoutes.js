@@ -401,6 +401,24 @@ router.delete('/log/delegacion/evento/poomsae/poomsae_Inscripcion/eliminar/:id',
     }
 });
 
+//Eliminar grupos
+router.delete('/poomsae/grupo/:equipo_id', async (req, res) => {
+
+  const { equipo_id } = req.params;
+
+  const { error } = await supabase
+    .from('suscrito_alumno_poomsae')
+    .delete()
+    .eq('equipo_id', equipo_id);
+
+  if (error) {
+    return res.status(500).json({ ok: false });
+  }
+
+  res.json({ ok: true });
+
+});
+
 //Obtener el total de los competidores inscritos en poomsae
 router.get('/evento/poomsae/obtenerTotalCompetidores/:id_evento/:categoria/:cinturon', async (req, res) => {
     try {
