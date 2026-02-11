@@ -193,16 +193,25 @@ router.post('/log/delegacion/evento/poomsae/inscribir', async (req, res) => {
 
             const categorias = new Set();
             const generos = new Set();
+            const cinturones = new Set();
 
             participantes.forEach(p => {
                 categorias.add(p.categoria_suscrito_alumno_poomsae);
                 generos.add(p.genero_suscrito_alumno_poomsae);
+                cinturones.add(p.cinturon_suscrito_alumno_poomsae);
             });
 
             if (categorias.size !== 1) {
                 return res.status(400).json({
                     ok: false,
                     msg: 'Ambos deben ser de la misma categoría'
+                });
+            }
+
+            if (cinturones.size !== 1) {
+                return res.status(400).json({
+                    ok: false,
+                    msg: 'Ambos deben tener el mismo cinturón'
                 });
             }
 
@@ -226,16 +235,25 @@ router.post('/log/delegacion/evento/poomsae/inscribir', async (req, res) => {
 
             const categorias = new Set();
             const generos = new Set();
+            const cinturones = new Set();
 
             participantes.forEach(p => {
                 categorias.add(p.categoria_suscrito_alumno_poomsae);
                 generos.add(p.genero_suscrito_alumno_poomsae);
+                cinturones.add(p.cinturon_suscrito_alumno_poomsae);
             });
 
             if (categorias.size !== 1) {
                 return res.status(400).json({
                     ok: false,
                     msg: 'Todos deben ser de la misma categoría'
+                });
+            }
+
+            if (cinturones.size !== 1) {
+                return res.status(400).json({
+                    ok: false,
+                    msg: 'Todos deben tener el mismo cinturón'
                 });
             }
 
