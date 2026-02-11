@@ -60,6 +60,19 @@ router.get('/log/delegacion/evento/poomsae/inscrito/:id_evento_fk/:id_delegacion
 
 });
 
+//Para obtener el equipo
+router.get('/log/delegacion/evento/poomsae/equipo/:id', async (req, res) => {
+
+    const { id } = req.params;
+
+    const { data } = await supabase
+        .from('suscrito_alumno_poomsae')
+        .select('*')
+        .eq('equipo_id', id);
+
+    res.json(data);
+
+});
 
 // Verificar si el alumno ya está inscrito por cédula
 router.get('/log/delegacion/evento/poomsae/poomsae_Inscripcion/cedula/:id_evento_fk/:cedula', async (req, res) => {
