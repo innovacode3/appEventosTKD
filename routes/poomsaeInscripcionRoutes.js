@@ -450,6 +450,34 @@ router.get('/evento/poomsae/obtenerTotalCompetidores/:id_evento/:categoria/:cint
     }
 });
 
+//Obtener modalidad
+router.get('/evento/poomsae/obtenerModalidad/:id_evento_fk', async (req, res) => {
+    try {
+        const { id_evento_fk } = req.params;
+
+        const { data, error } = await supabase
+            .rpc('obtener_modalidades_distintas', {
+                p_evento: id_evento_fk
+            });
+
+        if (error) {
+            console.error('Error RPC modalidades:', error);
+            return res.status(500).json({
+                message: 'Error al obtener las modalidades',
+                error
+            });
+        }
+
+        return res.json(data);
+    } catch (err) {
+        console.error('Error servidor:', err);
+
+        return res.status(500).json({
+            message: 'Error interno del servidor'
+        });
+    }
+})
+
 //Obtener categoria y cinturón para los filtros
 router.get('/evento/poomsae/obtenerCategoriaCinturon/:id_evento_fk', (req, res) => {
     const { id_evento_fk } = req.params;
