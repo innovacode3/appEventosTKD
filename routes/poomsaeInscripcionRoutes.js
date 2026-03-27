@@ -456,7 +456,7 @@ router.get('/evento/poomsae/obtenerModalidad/:id_evento_fk', async (req, res) =>
         const { id_evento_fk } = req.params;
 
         const { data, error } = await supabase
-            .rpc('obtener_modalidades_distintas', {
+            .rpc('get_modalidades_distinta', {
                 p_evento: id_evento_fk
             });
 
