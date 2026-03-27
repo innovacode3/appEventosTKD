@@ -486,7 +486,7 @@ router.get('/evento/poomsae/obtenerCategoriaCinturon/:id_evento_fk/:modalidad', 
                         categoria_suscrito_alumno_poomsae AS nombre_categoria, 
                         cinturon_suscrito_alumno_poomsae AS cinturones
                  FROM suscrito_alumno_poomsae
-                 WHERE id_evento_fk = $1 && modalidad = $2
+                 WHERE id_evento_fk = $1 AND modalidad = $2
                  GROUP BY categoria_suscrito_alumno_poomsae, cinturon_suscrito_alumno_poomsae
                  ORDER BY
                     CASE
