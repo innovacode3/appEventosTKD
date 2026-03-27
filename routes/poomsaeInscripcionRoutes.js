@@ -479,14 +479,14 @@ router.get('/evento/poomsae/obtenerModalidad/:id_evento_fk', async (req, res) =>
 })
 
 //Obtener categoria y cinturón para los filtros
-router.get('/evento/poomsae/obtenerCategoriaCinturon/:id_evento_fk', (req, res) => {
-    const { id_evento_fk } = req.params;
+router.get('/evento/poomsae/obtenerCategoriaCinturon/:id_evento_fk/:modalidad', (req, res) => {
+    const { id_evento_fk, modalidad } = req.params;
     const sql = `
                  SELECT 
                         categoria_suscrito_alumno_poomsae AS nombre_categoria, 
                         cinturon_suscrito_alumno_poomsae AS cinturones
                  FROM suscrito_alumno_poomsae
-                 WHERE id_evento_fk = $1
+                 WHERE id_evento_fk = $1 && modalidad = $2
                  GROUP BY categoria_suscrito_alumno_poomsae, cinturon_suscrito_alumno_poomsae
                  ORDER BY
                     CASE
@@ -517,7 +517,7 @@ router.get('/evento/poomsae/obtenerCategoriaCinturon/:id_evento_fk', (req, res) 
                         ELSE 12
                     END
                 `;
-    db.query(sql, [id_evento_fk], (err, result) => {
+    db.query(sql, [id_evento_fk, modalidad], (err, result) => {
         if (err) {
             console.error("Error al obtener categoría y cinturones: ", err.message);
             return res.status(500).json({ error: "Error al obtener los datos" });
