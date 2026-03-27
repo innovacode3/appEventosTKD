@@ -490,10 +490,10 @@ router.get('/evento/poomsae/obtenerCategoriaCinturon/:id_evento_fk/:modalidad', 
                  GROUP BY categoria_suscrito_alumno_poomsae, cinturon_suscrito_alumno_poomsae
                  ORDER BY
                     CASE
-                        WHEN categoria_suscrito_alumno_poomsae = 'PRE INFANTIL' THEN 1
-                        WHEN categoria_suscrito_alumno_poomsae = 'PRE CADETES A' THEN 2
-                        WHEN categoria_suscrito_alumno_poomsae = 'PRE CADETES B' THEN 3
-                        WHEN categoria_suscrito_alumno_poomsae = 'PRE CADETES C' THEN 4
+                        WHEN categoria_suscrito_alumno_poomsae = 'PRE INFANTIL 1' THEN 1
+                        WHEN categoria_suscrito_alumno_poomsae = 'PRE INFANTIL 2' THEN 2
+                        WHEN categoria_suscrito_alumno_poomsae = 'INFANTIL A' THEN 3
+                        WHEN categoria_suscrito_alumno_poomsae = 'INFANTIL B' THEN 4
                         WHEN categoria_suscrito_alumno_poomsae = 'CADETES' THEN 5
                         WHEN categoria_suscrito_alumno_poomsae = 'JUNIOR' THEN 6
                         WHEN categoria_suscrito_alumno_poomsae = 'SENIOR 1' THEN 7
