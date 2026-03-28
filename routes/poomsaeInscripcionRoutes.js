@@ -483,6 +483,7 @@ router.get('/evento/poomsae/obtenerCategoriaCinturon/:id_evento_fk/:modalidad', 
     const { id_evento_fk, modalidad } = req.params;
     const sql = `
                  SELECT 
+                        modalidad,
                         categoria_suscrito_alumno_poomsae AS nombre_categoria, 
                         cinturon_suscrito_alumno_poomsae AS cinturones
                  FROM suscrito_alumno_poomsae
@@ -526,20 +527,37 @@ router.get('/evento/poomsae/obtenerCategoriaCinturon/:id_evento_fk/:modalidad', 
         // Agrupar resultados por nivel
         const agrupado = {};
         result.rows.forEach(row => {
-            const { nombre_categoria, cinturones } = row;
-            if (!agrupado[nombre_categoria]) {
+            const { modalidad, nombre_categoria, cinturones } = row;
+            /*if (!agrupado[nombre_categoria]) {
                 agrupado[nombre_categoria] = [];
             }
             if (!agrupado[nombre_categoria].includes(cinturones)) {
                 agrupado[nombre_categoria].push(cinturones);
+            }*/
+
+            // clave compuesta
+            const key = `${modalidad}__${nombre_categoria}`;
+
+            if (!agrupado[key]) {
+                agrupado[key] = {
+                    modalidad,
+                    nombre_categoria,
+                    cinturones: []
+                };
+            }
+
+            if (!agrupado[key].cinturones.includes(cinturones)) {
+                agrupado[key].cinturones.push(cinturones);
             }
         });
 
         // Convertir a array de objetos
-        const respuesta = Object.keys(agrupado).map(nombre_categoria => ({
+        /*const respuesta = Object.keys(agrupado).map(nombre_categoria => ({
             nombre_categoria,
             cinturones: agrupado[nombre_categoria]
-        }));
+        }));*/
+
+        const respuesta = Object.values(agrupado);
 
         res.json(respuesta);
     })
