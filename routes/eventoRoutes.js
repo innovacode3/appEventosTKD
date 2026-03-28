@@ -606,15 +606,17 @@ router.get('/log/administrador/evento/lista_alumnos_poomsae/:id_evento_fk', (req
         WHERE sap.id_evento_fk = $1
         ORDER BY 
             CASE
-                WHEN sap.categoria_suscrito_alumno_poomsae = 'PRE INFANTIL' THEN 1
-                WHEN sap.categoria_suscrito_alumno_poomsae = 'PRE CADETES A' THEN 2
-                WHEN sap.categoria_suscrito_alumno_poomsae = 'PRE CADETES B' THEN 3
-                WHEN sap.categoria_suscrito_alumno_poomsae = 'PRE CADETES C' THEN 4
+                WHEN sap.categoria_suscrito_alumno_poomsae = 'PRE INFANTIL 1' THEN 1
+                WHEN sap.categoria_suscrito_alumno_poomsae = 'PRE INFANTIL 2' THEN 2
+                WHEN sap.categoria_suscrito_alumno_poomsae = 'INFANTIL A' THEN 3
+                WHEN sap.categoria_suscrito_alumno_poomsae = 'INFANTIL B' THEN 4
                 WHEN sap.categoria_suscrito_alumno_poomsae = 'CADETES' THEN 5
-                WHEN sap.categoria_suscrito_alumno_poomsae = 'PREJUVENIL' THEN 6
-                WHEN sap.categoria_suscrito_alumno_poomsae = 'JUVENIL U22' THEN 7
-                WHEN sap.categoria_suscrito_alumno_poomsae = 'SENIOR' THEN 8
-                ELSE 9
+                WHEN sap.categoria_suscrito_alumno_poomsae = 'JUNIOR' THEN 6
+                WHEN sap.categoria_suscrito_alumno_poomsae = 'SENIOR 1' THEN 7
+                WHEN sap.categoria_suscrito_alumno_poomsae = 'SENIOR 2' THEN 8
+                WHEN sap.categoria_suscrito_alumno_poomsae = 'MASTER 1' THEN 9
+                WHEN sap.categoria_suscrito_alumno_poomsae = 'MASTER 2' THEN 10
+                ELSE 11
             END,
             CASE
                 WHEN sap.genero_suscrito_alumno_poomsae = 'Masculino' THEN 1
