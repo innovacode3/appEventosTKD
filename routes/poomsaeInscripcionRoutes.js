@@ -528,26 +528,17 @@ router.get('/evento/poomsae/obtenerCategoriaCinturon/:id_evento_fk/:modalidad', 
         const agrupado = {};
         result.rows.forEach(row => {
             const { modalidad, nombre_categoria, cinturones } = row;
-            /*if (!agrupado[nombre_categoria]) {
-                agrupado[nombre_categoria] = [];
-            }
-            if (!agrupado[nombre_categoria].includes(cinturones)) {
-                agrupado[nombre_categoria].push(cinturones);
-            }*/
-
-            // clave compuesta
-            const key = `${modalidad}__${nombre_categoria}`;
-
-            if (!agrupado[key]) {
-                agrupado[key] = {
+            
+            if (!agrupado[nombre_categoria]) {
+                agrupado[nombre_categoria] = {
                     modalidad,
                     nombre_categoria,
                     cinturones: []
                 };
             }
 
-            if (!agrupado[key].cinturones.includes(cinturones)) {
-                agrupado[key].cinturones.push(cinturones);
+            if (!agrupado[nombre_categoria].cinturones.includes(cinturones)) {
+                agrupado[nombre_categoria].cinturones.push(cinturones);
             }
         });
 
@@ -556,9 +547,8 @@ router.get('/evento/poomsae/obtenerCategoriaCinturon/:id_evento_fk/:modalidad', 
             nombre_categoria,
             cinturones: agrupado[nombre_categoria]
         }));*/
-
         const respuesta = Object.values(agrupado);
-
+        
         res.json(respuesta);
     })
 })
