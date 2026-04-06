@@ -175,10 +175,118 @@ router.post('/log/delegacion/festival/inscribir', async (req, res) => {
 });
 
 //Editar alumno inscrito festival
+router.put('/log/delegacion/festival/editar/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const p = req.body;
 
+        if (!id) {
+            return res.status(400).json({
+                ok: false,
+                msg: 'ID requerido'
+            });
+        }
+
+        if (!p || !p.cedula_festival || !p.categoria_alumno_festival) {
+            return res.status(400).json({
+                ok: false,
+                msg: 'Datos incompletos'
+            });
+        }
+
+        // Validar duplicado (excluyendo el mismo registro)
+        const { data: existe } = await supabase
+            .from('suscrito_alumno_festival')
+            .select('id_suscrito_festival')
+            .eq('id_evento_fk', p.id_evento_fk)
+            .eq('cedula_festival', p.cedula_festival)
+            .eq('categoria_alumno_festival', p.categoria_alumno_festival)
+            .neq('id_suscrito_festival', id) // clave aquí
+            .limit(1);
+
+        if (existe.length > 0) {
+            return res.status(400).json({
+                ok: false,
+                msg: 'Ya existe otro registro con esa categoría'
+            });
+        }
+
+        // Actualizar
+        const { data, error } = await supabase
+            .from('suscrito_alumno_festival')
+            .update({
+                cedula_festival: p.cedula_festival,
+                id_evento_fk: p.id_evento_fk,
+                id_delegacion_fk: p.id_delegacion_fk,
+                nombres_alumno_festival: p.nombres_alumno_festival,
+                apellidos_alumno_festival: p.apellidos_alumno_festival,
+                edad_alumno_festival: p.edad_alumno_festival,
+                categoria_alumno_festival: p.categoria_alumno_festival,
+                genero_alumno_festival: p.genero_alumno_festival,
+                cinturon_alumno_festival: p.cinturon_alumno_festival,
+                fnacimiento_alumno_festival: p.fnacimiento_alumno_festival
+            })
+            .eq('id_suscrito_festival', id)
+            .select();
+
+        if (error) throw error;
+
+        res.json({
+            ok: true,
+            actualizado: data
+        });
+
+    } catch (err) {
+        console.error('Error servidor:', err);
+
+        return res.status(500).json({
+            message: 'Error interno del servidor'
+        });
+    }
+});
 
 //Eliminar alumno inscrito festival
+router.delete('/log/delegacion/festival/eliminar/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
 
+        if (!id) {
+            return res.status(400).json({
+                ok: false,
+                msg: 'ID requerido'
+            });
+        }
+
+        // Eliminar registro
+        const { data, error } = await supabase
+            .from('suscrito_alumno_festival')
+            .delete()
+            .eq('id_suscrito_festival', id)
+            .select(); // 👈 importante para saber qué se eliminó
+
+        if (error) throw error;
+
+        // Validar si existía
+        if (!data || data.length === 0) {
+            return res.status(404).json({
+                ok: false,
+                msg: 'Registro no encontrado'
+            });
+        }
+
+        res.json({
+            ok: true,
+            eliminado: data
+        });
+
+    } catch (err) {
+        console.error('Error servidor:', err);
+
+        return res.status(500).json({
+            message: 'Error interno del servidor'
+        });
+    }
+});
 
 //Obtener el total de los competidores inscritos en festival
 
