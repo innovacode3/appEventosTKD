@@ -1,0 +1,183 @@
+const express = require('express');
+const router = express.Router();
+//conexion supabase
+const supabase = require('../db/supabaseClient');
+
+//Obtener alumnos festival inscritos
+router.get('/log/delegacion/festival/festival_inscripcion/:id_evento_fk/:id_delegacion_fk', async (req, res) => {
+    try {
+        const { id_evento_fk, id_delegacion_fk } = req.params;
+
+        const { data, error } = await supabase
+            .rpc('get_festival_inscritos', {
+                p_evento: id_evento_fk,
+                p_delegacion: id_delegacion_fk
+            });
+        
+        if (error) {
+            console.error('Error RPC poomsae:', error);
+            return res.status(500).json({
+                message: 'Error al obtener los inscritos',
+                error
+            });
+        }
+
+        return res.json(data);
+
+    } catch (err) {
+        console.error('Error servidor:', err);
+
+        return res.status(500).json({
+            message: 'Error interno del servidor'
+        });
+    }
+})
+
+//Obtener alumno inscrito por id
+router.get('/log/delegacion/festival/inscrito/:id_evento_fk/:id_delegacion_fk/:id', async (req, res) => {
+    try {
+        const { id, id_evento_fk, id_delegacion_fk } = req.params;
+
+        const { data, error } = await supabase
+            .from('suscrito_alumno_festival')
+            .select('*')
+            .eq('id_evento_fk', id_evento_fk)
+            .eq('id_delegacion_fk', id_delegacion_fk)
+            .eq('id_suscrito_festival')
+            .single();
+        
+        if (error) {
+            return res.status(404).json({ msg: 'No encontrado' });
+        }
+
+        res.json(data);
+
+    } catch (err) {
+        console.error('Error servidor:', err);
+
+        return res.status(500).json({
+            message: 'Error interno del servidor'
+        });
+    }
+})
+
+//Verificar si el alumno ya está inscrito por cédula
+router.get('/log/delegacion/festival/festival_inscripcion/cedula/:id_evento_fk/:cedula', async (req, res) => {
+    try {
+        const { id_evento_fk, cedula } = req.params;
+
+        const { data, error } = await supabase
+            .from('suscrito_alumno_festival')
+            .select('cedula_festival')
+            .eq('id_evento_fk', id_evento_fk)
+            .eq('cedula_festival', cedula)
+            .limit(1);
+        
+        if (error) {
+            console.error('Error Supabase:', error);
+
+            return res.status(500).json({
+                message: 'Error al consultar inscripción'
+            });
+        }
+
+        // Si existe → true | si no → false
+        const existe = data && data.length > 0;
+
+        return res.json(existe);
+
+    } catch (err) {
+        console.error('Error servidor:', err);
+
+        return res.status(500).json({
+            message: 'Error interno del servidor'
+        });
+    }
+})
+
+//Obtener las inscripciones por la cédula
+router.get('/log/delegacion/festival/festival_inscripcion/buscarCedula/:id_evento_fk/:cedula', async (req, res) => {
+    try {
+        const { id_evento_fk, cedula } = req.params;
+
+        const { data, error } = await supabase
+            .from('suscrito_alumno_festival')
+            .select('*')
+            .eq('id_evento_fk', id_evento_fk)
+            .eq('cedula_festival', cedula);
+        
+        if (error) {
+            console.error("Error al obtener alumno:", error.message);
+            return res.status(500).json({ error: "Error al obtener los datos" });
+        }
+
+        if (!data || data.length === 0) {
+            return res.status(404).json({ mensaje: 'No hay registro con esa cédula' });
+        }
+
+        res.json(data);
+
+    } catch (err) {
+        console.error('Error servidor:', err);
+
+        return res.status(500).json({
+            message: 'Error interno del servidor'
+        });
+    }
+})
+
+//Inscribir alumnos de festival
+router.post('/log/delegacion/festival/inscribir', async (req, res) => {
+    try {
+        const p = req.body;
+
+        if (!p || !p.cedula_festival || !p.categoria_alumno_festival) {
+            return res.status(400).json({
+                ok: false,
+                msg: 'Datos incompletos'
+            });
+        }
+
+        // Validar duplicado
+        const { data: existe } = await supabase
+            .from('suscrito_alumno_festival')
+            .select('id_suscrito_festival')
+            .eq('id_evento_fk', p.id_evento_fk)
+            .eq('cedula_festival', p.cedula_festival)
+            .eq('categoria_alumno_festival', p.categoria_alumno_festival)
+            .limit(1);
+
+        if (existe.length > 0) {
+            return res.status(400).json({
+                ok: false,
+                msg: 'Ya está inscrito en esta categoría'
+            });
+        }
+
+        const { data, error } = await supabase
+            .from('suscrito_alumno_festival')
+            .insert([p]);
+
+        if (error) throw error;
+
+        res.json({
+            ok: true,
+            inscrito: data
+        });
+
+    } catch (err) {
+        console.error('Error servidor:', err);
+
+        return res.status(500).json({
+            message: 'Error interno del servidor'
+        });
+    }
+});
+
+//Editar alumno inscrito festival
+
+
+//Eliminar alumno inscrito festival
+
+
+//Obtener el total de los competidores inscritos en festival
