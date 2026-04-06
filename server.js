@@ -13,6 +13,7 @@ const presentacionResultadosRoutes = require("./routes/presentacionResultadosRou
 const poomsaeInscripcionRoutes = require("./routes/poomsaeInscripcionRoutes");
 const poomsaeResultado = require("./routes/poomsaeResultado");
 const historialCompetencia = require("./routes/historialCompetenciaRoutes");
+const festivalInscripcionRoutes = require("./routes/festivalInscripcionRoutes");
 require('dotenv').config();
 
 const app = express();
@@ -45,7 +46,8 @@ app.use(administradorRoutes,
         presentacionResultadosRoutes,
         poomsaeInscripcionRoutes,
         poomsaeResultado,
-        historialCompetencia
+        historialCompetencia,
+        festivalInscripcionRoutes
 );
 
 // Servir archivos desde la carpeta "uploads"
