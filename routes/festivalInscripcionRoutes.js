@@ -181,3 +181,6 @@ router.post('/log/delegacion/festival/inscribir', async (req, res) => {
 
 
 //Obtener el total de los competidores inscritos en festival
+
+
+module.exports = router;
