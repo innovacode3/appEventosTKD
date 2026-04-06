@@ -114,8 +114,9 @@ router.get('/log/delegacion/evento/poomsae/poomsae_Inscripcion/cedula/:id_evento
 
 //Obtener las inscripciones pero por la cedula
 router.get('/log/delegacion/evento/poomsae/poomsaeInscripcion/buscarCedula/:id_evento_fk/:cedula', async (req, res) => {
-    const { id_evento_fk, cedula } = req.params;
     try {
+        const { id_evento_fk, cedula } = req.params;
+        
         const { data, error } = await supabase
             .from('suscrito_alumno_poomsae')
             .select('*')
