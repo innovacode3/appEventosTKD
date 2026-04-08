@@ -43,7 +43,7 @@ router.get('/log/delegacion/festival/inscrito/:id_evento_fk/:id_delegacion_fk/:i
             .select('*')
             .eq('id_evento_fk', id_evento_fk)
             .eq('id_delegacion_fk', id_delegacion_fk)
-            .eq('id_suscrito_festival')
+            .eq('id_suscrito_festival', id)
             .single();
         
         if (error) {
