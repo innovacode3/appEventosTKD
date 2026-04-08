@@ -36,19 +36,22 @@ app.use(express.json({ limit: '50mb' })); // Middleware para parsear JSON en el 
 //dbConnect();
 
 //Ruta de las llaves
-app.use(administradorRoutes,
-        alumnoInscripcionRoutes,
-        alumnoRoutes,
-        delegacionRoutes,
-        eventoRoutes,
-        llavesRoutes,
-        presentacionLlavesRoutes,
-        presentacionResultadosRoutes,
-        poomsaeInscripcionRoutes,
-        poomsaeResultado,
-        historialCompetencia,
-        festivalInscripcionRoutes
-);
+const routes = [
+  administradorRoutes,
+  alumnoInscripcionRoutes,
+  alumnoRoutes,
+  delegacionRoutes,
+  eventoRoutes,
+  llavesRoutes,
+  presentacionLlavesRoutes,
+  presentacionResultadosRoutes,
+  poomsaeInscripcionRoutes,
+  poomsaeResultado,
+  historialCompetencia,
+  festivalInscripcionRoutes
+];
+
+routes.forEach(route => app.use(route));
 
 // Servir archivos desde la carpeta "uploads"
 //app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
