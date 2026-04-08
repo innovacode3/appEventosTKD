@@ -129,7 +129,8 @@ router.get('/log/delegacion/festival/festival_inscripcion/buscarCedula/:id_event
 //Inscribir alumnos de festival
 router.post('/log/delegacion/festival/inscribir', async (req, res) => {
     try {
-        const p = req.body;
+        //extraemos y excluimos el id
+        const {id_suscrito_festival, ...p} = req.body;
 
         if (!p || !p.cedula_festival || !p.categoria_alumno_festival) {
             return res.status(400).json({
