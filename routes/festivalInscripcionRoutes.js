@@ -292,4 +292,32 @@ router.delete('/log/delegacion/festival/eliminar/:id', async (req, res) => {
 //Obtener el total de los competidores inscritos en festival
 
 
+//Obtener la lista de alumnos inscritos por delegacion para admin, public, loguedo
+router.get('/evento/lista_alumnos_festival/:id_evento_fk', async (req, res) => {
+    try {
+        const { id_evento_fk } = req.params;
+        
+        const { data, error } = await supabase
+            .rpc('obtener_alumnos_festival_inscritos', {
+                p_id_evento: id_evento_fk
+            });
+        
+        if (error) {
+            console.error('Error Supabase:', error);
+            return res.status(500).json({
+                message: 'Error en la consulta'
+            });
+        }
+
+        res.json(data);
+        
+    } catch (err) {
+        console.error('Error servidor:', err);
+
+        return res.status(500).json({
+            message: 'Error interno del servidor'
+        });
+    }
+})
+
 module.exports = router;
