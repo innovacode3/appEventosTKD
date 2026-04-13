@@ -552,27 +552,31 @@ router.get('/evento/delegacion/lista_alumnos_inscritos/:id_evento_fk/:id_delegac
 });
 
 //listar todos los alumnos que estan suscritos a un evento
-router.get('/log/administrador/evento/lista_alumnos_combate/:id_evento_fk', (req, res) => {
-    const { id_evento_fk } = req.params;
-    const query = `
-        SELECT sae.id_suscrito_alumno_evento,
-               sae.cedula_suscrito_alumno_evento, sae.nombres_suscrito_alumno_evento, sae.id_evento_fk, sae.id_delegacion_fk,
-               sae.apellidos_suscrito_alumno_evento, sae.edad_suscrito_alumno_evento, sae.nombre_categoria_alumno_evento, 
-               sae.genero_suscrito_alumno_evento, sae.cinturon_suscrito_alumno_evento, sae.peso_suscrito_alumno_evento, 
-               sae.peso_categoria_suscrito_alumno_evento, sae.nivel_suscrito_alumno_evento, sae.fnacimiento_suscrito_alumno_evento, rd.nombre_delegacion
-        FROM suscrito_alumno_evento sae
-        INNER JOIN registro_delegacion rd ON sae.id_delegacion_fk = rd.id_delegacion
-        WHERE sae.id_evento_fk = $1
-        ORDER BY
-            rd.nombre_delegacion ASC`;
-    db.query(query, [id_evento_fk], (error, resultado) => {
+router.get('/log/administrador/evento/lista_alumnos_combate/:id_evento_fk', async (req, res) => {
+    try {
+        const { id_evento_fk } = req.params;
+
+        const { data, error } = await supabase
+            .rpc('obtener_alumnos_combate_inscritos', {
+                p_id_evento: id_evento_fk
+            });
+        
         if (error) {
-            console.log(error.message);
-            return res.status(500).json({ message: "Error en la consulta" });
+            console.error('Error Supabase:', error);
+            return res.status(500).json({
+                message: 'Error en la consulta'
+            });
         }
-        //Siempre muestra un array así esté vacío
-        res.json(resultado.rows);
-    });
+
+        res.json(data);
+        
+    } catch (err) {
+        console.error('Error servidor:', err);
+
+        return res.status(500).json({
+            message: 'Error interno del servidor'
+        });
+    }
 });
 
 //Eliminar modo administrador un alumno inscrito a un evento
