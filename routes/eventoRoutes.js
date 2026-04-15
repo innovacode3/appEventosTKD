@@ -593,62 +593,31 @@ router.delete('/log/administrador/evento/lista_alumnos_combate/eliminarCombate/:
 })
 
 //listar todos los alumnos que estan suscritos a un evento modo poomsae
-router.get('/log/administrador/evento/lista_alumnos_poomsae/:id_evento_fk', (req, res) => {
-    const { id_evento_fk } = req.params;
-    const query = `
-        SELECT sap.id_suscrito_alumno_poomsae,
-               sap.cedula_suscrito_alumno_poomsae, 
-               sap.nombres_suscrito_alumno_poomsae, 
-               sap.apellidos_suscrito_alumno_poomsae, 
-               sap.edad_suscrito_alumno_poomsae, 
-               sap.categoria_suscrito_alumno_poomsae, 
-               sap.genero_suscrito_alumno_poomsae, 
-               sap.cinturon_suscrito_alumno_poomsae, 
-               rd.nombre_delegacion
-        FROM suscrito_alumno_poomsae sap
-        INNER JOIN registro_delegacion rd ON sap.id_delegacion_fk = rd.id_delegacion
-        WHERE sap.id_evento_fk = $1
-        ORDER BY 
-            CASE
-                WHEN sap.categoria_suscrito_alumno_poomsae = 'PRE INFANTIL 1' THEN 1
-                WHEN sap.categoria_suscrito_alumno_poomsae = 'PRE INFANTIL 2' THEN 2
-                WHEN sap.categoria_suscrito_alumno_poomsae = 'INFANTIL A' THEN 3
-                WHEN sap.categoria_suscrito_alumno_poomsae = 'INFANTIL B' THEN 4
-                WHEN sap.categoria_suscrito_alumno_poomsae = 'CADETES' THEN 5
-                WHEN sap.categoria_suscrito_alumno_poomsae = 'JUNIOR' THEN 6
-                WHEN sap.categoria_suscrito_alumno_poomsae = 'SENIOR 1' THEN 7
-                WHEN sap.categoria_suscrito_alumno_poomsae = 'SENIOR 2' THEN 8
-                WHEN sap.categoria_suscrito_alumno_poomsae = 'MASTER 1' THEN 9
-                WHEN sap.categoria_suscrito_alumno_poomsae = 'MASTER 2' THEN 10
-                ELSE 11
-            END,
-            CASE
-                WHEN sap.genero_suscrito_alumno_poomsae = 'Masculino' THEN 1
-                WHEN sap.genero_suscrito_alumno_poomsae = 'Femenino' THEN 2
-                ELSE 3
-            END,
-            CASE
-                WHEN sap.cinturon_suscrito_alumno_poomsae = 'Blanco' THEN 1
-                WHEN sap.cinturon_suscrito_alumno_poomsae = 'Blanco-Amarillo' THEN 2
-                WHEN sap.cinturon_suscrito_alumno_poomsae = 'Amarillo' THEN 3
-                WHEN sap.cinturon_suscrito_alumno_poomsae = 'Amarillo-Verde' THEN 4
-                WHEN sap.cinturon_suscrito_alumno_poomsae = 'Verde' THEN 5
-                WHEN sap.cinturon_suscrito_alumno_poomsae = 'Verde-Azul' THEN 6
-                WHEN sap.cinturon_suscrito_alumno_poomsae = 'Azul' THEN 7
-                WHEN sap.cinturon_suscrito_alumno_poomsae = 'Azul-Rojo' THEN 8
-                WHEN sap.cinturon_suscrito_alumno_poomsae = 'Rojo' THEN 9
-                WHEN sap.cinturon_suscrito_alumno_poomsae = 'Rojo-Negro' THEN 10
-                WHEN sap.cinturon_suscrito_alumno_poomsae = 'Negro' THEN 10
-            END,
-            rd.nombre_delegacion ASC;`;
-    db.query(query, [id_evento_fk], (error, resultado) => {
+router.get('/log/administrador/evento/lista_alumnos_poomsae/:id_evento_fk', async (req, res) => {
+    try {
+        const { id_evento_fk } = req.params;
+
+        const { data, error } = await supabase
+            .rpc('obtener_alumnos_poomsae_inscritos', {
+                p_id_evento: id_evento_fk
+            });
+        
         if (error) {
-            console.log(error.message);
-            return res.status(500).json({ message: "Error en la consulta" });
+            console.error('Error Supabase:', error);
+            return res.status(500).json({
+                message: 'Error en la consulta'
+            }); 
         }
-        //Siempre muestra un array así esté vacío
-        res.json(resultado.rows);
-    });
+
+        res.json(data);
+        
+    } catch (err) {
+        console.error('Error servidor:', err);
+
+        return res.status(500).json({
+            message: 'Error interno del servidor'
+        });
+    }
 });
 
 //obtener la lista de alumnos inscritos a un evento modo poomsae en base al id_delegacion modo publico
