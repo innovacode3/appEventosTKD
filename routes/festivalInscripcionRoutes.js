@@ -321,7 +321,7 @@ router.get('/evento/lista_alumnos_festival/:id_evento_fk', async (req, res) => {
 })
 
 //Obtener la lista de alumnos inscritos por delegacion para admin, public, loguedo (id_evento, id_delegacion)
-router.get('/evento/lista_alumnos_festival_delegacion/:id_evento_fk/:id_delegacion_fk', async (req, res) => {
+router.get('/evento/lista_alumnos/festival_delegacion/:id_evento_fk/:id_delegacion_fk', async (req, res) => {
     try {
         const { id_evento_fk, id_delegacion_fk } = req.params;
 
