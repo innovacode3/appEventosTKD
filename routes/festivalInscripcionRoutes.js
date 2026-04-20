@@ -328,7 +328,7 @@ router.get('/evento/lista_alumnos/festival_delegacion/:id_evento_fk/:id_delegaci
         const { data, error } = await supabase
             .rpc('obtener_alumnos_festival_inscritos_delegacion', {
                 p_id_evento: id_evento_fk,
-                p_delegacion: id_delegacion_fk
+                p_id_delegacion: id_delegacion_fk
             });
         
         if (error) {
