@@ -320,4 +320,33 @@ router.get('/evento/lista_alumnos_festival/:id_evento_fk', async (req, res) => {
     }
 })
 
+//Obtener la lista de alumnos inscritos por delegacion para admin, public, loguedo (id_evento, id_delegacion)
+router.get('evento/lista_alumnos_festival_delegacion/:id_evento_fk/:id_delegacion_fk', async (req, res) => {
+    try {
+        const { id_evento_fk, id_delegacion_fk } = req.params;
+
+        const { data, error } = await supabase
+            .rpc('obtener_alumnos_festival_inscritos_delegacion', {
+                p_id_evento: id_evento_fk,
+                p_delegacion: id_delegacion_fk
+            });
+        
+        if (error) {
+            console.error('Error Supabase:', error);
+            return res.status(500).json({
+                message: 'Error en la consulta'
+            });
+        }
+
+        res.json(data);
+        
+    } catch (err) {
+        console.error('Error servidor:', err);
+
+        return res.status(500).json({
+            message: 'Error interno del servidor'
+        });
+    }
+})
+
 module.exports = router;
