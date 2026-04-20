@@ -620,73 +620,34 @@ router.get('/log/administrador/evento/lista_alumnos_poomsae/:id_evento_fk', asyn
     }
 });
 
-//obtener la lista de alumnos inscritos a un evento modo poomsae en base al id_delegacion modo publico
-router.get('/evento/delegacion/lista_alumnos_inscritos_poomsae/:id_evento_fk/:id_delegacion_fk', (req, res) => {
-    const { id_evento_fk, id_delegacion_fk } = req.params;
-    const query = `
-        SELECT r.cedula_suscrito_alumno_poomsae, 
-               r.nombres_suscrito_alumno_poomsae, 
-               r.apellidos_suscrito_alumno_poomsae, 
-               r.edad_suscrito_alumno_poomsae, 
-               r.categoria_suscrito_alumno_poomsae, 
-               r.genero_suscrito_alumno_poomsae, 
-               r.cinturon_suscrito_alumno_poomsae,
-               d.nombre_delegacion
-        FROM suscrito_alumno_poomsae r
-        JOIN registro_delegacion d ON r.id_delegacion_fk = d.id_delegacion
-        WHERE r.id_evento_fk = $1 AND id_delegacion_fk = $2
-        ORDER BY 
-            CASE
-                WHEN r.categoria_suscrito_alumno_poomsae = 'PRE INFANTIL' THEN 1
-                WHEN r.categoria_suscrito_alumno_poomsae = 'PRE CADETES A' THEN 2
-                WHEN r.categoria_suscrito_alumno_poomsae = 'PRE CADETES B' THEN 3
-                WHEN r.categoria_suscrito_alumno_poomsae = 'PRE CADETES C' THEN 4
-                WHEN r.categoria_suscrito_alumno_poomsae = 'CADETES' THEN 5
-                WHEN r.categoria_suscrito_alumno_poomsae = 'PREJUVENIL' THEN 6
-                WHEN r.categoria_suscrito_alumno_poomsae = 'JUVENIL U22' THEN 7
-                WHEN r.categoria_suscrito_alumno_poomsae = 'SENIOR' THEN 8
-                ELSE 9
-            END,
-            CASE
-                WHEN r.genero_suscrito_alumno_poomsae = 'Masculino' THEN 1
-                WHEN r.genero_suscrito_alumno_poomsae = 'Femenino' THEN 2
-                ELSE 3
-            END,
-            CASE
-                WHEN r.cinturon_suscrito_alumno_poomsae = 'Blanco' THEN 1
-                WHEN r.cinturon_suscrito_alumno_poomsae = 'Blanco-Amarillo' THEN 2
-                WHEN r.cinturon_suscrito_alumno_poomsae = 'Amarillo' THEN 3
-                WHEN r.cinturon_suscrito_alumno_poomsae = 'Amarillo-Verde' THEN 4
-                WHEN r.cinturon_suscrito_alumno_poomsae = 'Verde' THEN 5
-                WHEN r.cinturon_suscrito_alumno_poomsae = 'Verde-Azul' THEN 6
-                WHEN r.cinturon_suscrito_alumno_poomsae = 'Azul' THEN 7
-                WHEN r.cinturon_suscrito_alumno_poomsae = 'Azul-Rojo' THEN 8
-                WHEN r.cinturon_suscrito_alumno_poomsae = 'Rojo' THEN 9
-                WHEN r.cinturon_suscrito_alumno_poomsae = 'Rojo-Negro' THEN 10
-                WHEN r.cinturon_suscrito_alumno_poomsae = 'Negro' THEN 10
-            END`;
-    db.query(query, [id_evento_fk, id_delegacion_fk], (error, resultado) => {
-        if (error) {
-            console.log(error.message);
-            return res.status(500).json({ message: "Error en la consulta" });
-        }
-        //Siempre muestra un array así esté vacío
-        res.json(resultado.rows);
-    });
-});
+//obtener la lista de alumnos inscritos a un evento modo poomsae en base al id_delegacion modo publico, logueado
+router.get('/evento/delegacion/lista_alumnos_inscritos_poomsae/:id_evento_fk/:id_delegacion_fk', async (req, res) => {
+    try {
+        const { id_evento_fk, id_delegacion_fk } = req.params;
 
-//Eliminar modo administrador un inscrito en poomsae
-router.delete('/log/administrador/evento/lista_alumnos_poomsae/eliminarPoomsae/:id', (req, res) => {
-    const { id } = req.params;
-    const sql = `DELETE FROM suscrito_alumno_poomsae WHERE id_suscrito_alumno_poomsae = $1`;  
-    db.query(sql, [id], (err, result) => {
-        if (err) {
-            console.error(err.message);
-            return res.status(500).json({ error: 'Error al eliminar los datos' });
+        const { data, error } = await supabase
+            .rpc('obtener_alumnos_poomsae_inscritos_delegacion', {
+                p_id_evento: id_evento_fk,
+                p_id_delegacion: id_delegacion_fk
+            });
+        
+        if (error) {
+            console.error('Error Supabase:', error);
+            return res.status(500).json({
+                message: 'Error en la consulta'
+            }); 
         }
-        res.json('Se eliminó correctamente el alumno inscrito');
-    });
-})
+
+        res.json(data);
+
+    } catch (err) {
+        console.error('Error servidor:', err);
+
+        return res.status(500).json({
+            message: 'Error interno del servidor'
+        });
+    }
+});
 
 // suma total de puntos por delegacion en un evento
 router.get('/evento/resultadosGeneral/:id_evento_fk', (req, res) => {
