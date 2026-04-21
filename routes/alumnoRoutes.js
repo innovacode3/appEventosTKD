@@ -164,14 +164,14 @@ router.delete('/log/delegacion/alumno/borrar/:cedula', async (req, res) => {
 });
 
 //Obtener un alumno por cédula
-router.get('/log/delegacion/registro_alumno/ced/:cedula', async (req, res) => {
+router.get('/log/delegacion/registro_alumno/ced/:id_delegacion_fk/:cedula', async (req, res) => {
     const { cedula } = req.params;
     try {
         const { data, error } = await supabase
             .from('registro_alumno')
             .select('*')
             .eq('cedula_alumno', cedula)
-            .maybeSingle();;
+            .single();
         
         if (error) {
           console.error("Error al obtener alumno:", error.message);
