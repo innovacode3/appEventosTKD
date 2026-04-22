@@ -96,14 +96,15 @@ router.get('/log/delegacion/festival/festival_inscripcion/cedula/:id_evento_fk/:
 })
 
 //Obtener las inscripciones por la cédula
-router.get('/log/delegacion/festival/festival_inscripcion/buscarCedula/:id_evento_fk/:cedula', async (req, res) => {
+router.get('/log/delegacion/festival/festival_inscripcion/buscarCedula/:id_evento_fk/:id_delegacion_fk/:cedula', async (req, res) => {
     try {
-        const { id_evento_fk, cedula } = req.params;
+        const { id_evento_fk, id_delegacion_fk, cedula } = req.params;
 
         const { data, error } = await supabase
             .from('suscrito_alumno_festival')
             .select('*')
             .eq('id_evento_fk', id_evento_fk)
+            .eq('id_delegacion_fk', id_delegacion_fk)
             .eq('cedula_festival', cedula);
         
         if (error) {

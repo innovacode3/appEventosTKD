@@ -46,24 +46,27 @@ router.get('/log/delegacion/evento/combate/ObteneralumnoInscripcion/:id_evento_f
 });
 
 //Obtener las inscripciones pero por la cedula
-router.get('/log/delegacion/evento/combate/alumnoInscripcion/buscarCedula/:id_evento_fk/:cedula', async (req, res) => {
-  const { id_evento_fk, cedula } = req.params;
+router.get('/log/delegacion/evento/combate/alumnoInscripcion/buscarCedula/:id_evento_fk/:id_delegacion_fk/:cedula', async (req, res) => {
+  const { id_evento_fk, id_delegacion_fk, cedula } = req.params;
+
   try {
     const { data, error } = await supabase
-        .from('suscrito_alumno_evento')
-        .select('*')
-        .eq('id_evento_fk', id_evento_fk)
-        .eq('cedula_suscrito_alumno_evento', cedula);
+      .from('suscrito_alumno_evento')
+      .select('*')
+      .eq('id_evento_fk', id_evento_fk)
+      .eq('id_delegacion_fk', id_delegacion_fk)
+      .eq('cedula_suscrito_alumno_evento', cedula);
+
     if (error) {
-        console.error("Error al obtener alumno:", error.message);
-        return res.status(500).json({ error: "Error al obtener los datos" });
+      console.error("Error al obtener alumno:", error.message);
+      return res.status(500).json({ error: "Error al obtener los datos" });
     }
-    if (!data || data.length === 0) {
-        return res.status(404).json({ mensaje: 'No hay registro con esa cédula' });
-    }
-    res.json(data);
+
+    // ✅ SIEMPRE devolver array (aunque esté vacío)
+    return res.json(data || []);
+
   } catch (err) {
-    res.status(500).json({ error: err.message || err });
+    return res.status(500).json({ error: err.message || err });
   }
 });
 
