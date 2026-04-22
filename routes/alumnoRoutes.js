@@ -171,7 +171,6 @@ router.get('/log/delegacion/registro_alumno/ced/:id_delegacion_fk/:cedula', asyn
             .from('registro_alumno')
             .select('*')
             .eq('cedula_alumno', cedula)
-            .single();
         
         if (error) {
           console.error("Error al obtener alumno:", error.message);
