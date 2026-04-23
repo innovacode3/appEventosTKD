@@ -290,9 +290,6 @@ router.delete('/log/delegacion/festival/eliminar/:id', async (req, res) => {
     }
 });
 
-//Obtener el total de los competidores inscritos en festival
-
-
 //Obtener la lista de alumnos inscritos por delegacion para admin, public, loguedo
 router.get('/evento/lista_alumnos_festival/:id_evento_fk', async (req, res) => {
     try {
@@ -360,7 +357,7 @@ router.get('/evento/festival/categoriasFiltradas/:id_evento_fk', async (req, res
                 p_evento: id_evento_fk
             });
 
-         if (error) {
+        if (error) {
             console.error('Error Supabase:', error);
             return res.status(500).json({
                 message: 'Error en la consulta'
@@ -369,6 +366,36 @@ router.get('/evento/festival/categoriasFiltradas/:id_evento_fk', async (req, res
 
         res.json(data);
 
+    } catch (err) {
+        console.error('Error servidor:', err);
+
+        return res.status(500).json({
+            message: 'Error interno del servidor'
+        });
+    }
+})
+
+//Obtener los alumnos inscritos por id_evento, categoria, genero
+router.get('/evento/festival/listaInscritosEventoLogPublic/:id_evento_fk/:categoria/:genero', async (req, res) => {
+    try {
+        const { id_evento_fk, categoria_alumno_festival, genero_alumno_festival} = req.params;
+
+        const { data, error } = await supabase
+            .rpc('get_listado_festival_log_public', {
+                p_evento: id_evento_fk,
+                p_categoria: categoria_alumno_festival,
+                p_genero: genero_alumno_festival
+            });
+        
+       if (error) {
+            console.error('Error Supabase:', error);
+            return res.status(500).json({
+                message: 'Error en la consulta'
+            });
+        }
+
+        res.json(data);
+         
     } catch (err) {
         console.error('Error servidor:', err);
 
