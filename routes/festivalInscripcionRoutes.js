@@ -351,7 +351,7 @@ router.get('/evento/lista_alumnos/festival_delegacion/:id_evento_fk/:id_delegaci
 })
 
 //Obtener las categorias en ese evento ordenadas
-router.get('evento/festival/categoriasFiltradas/:id_evento_fk', async (req, res) => {
+router.get('/evento/festival/categoriasFiltradas/:id_evento_fk', async (req, res) => {
     try {
         const { id_evento_fk } = req.params;
 
