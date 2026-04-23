@@ -376,7 +376,7 @@ router.get('/evento/festival/categoriasFiltradas/:id_evento_fk', async (req, res
 })
 
 //Obtener los alumnos inscritos por id_evento, categoria, genero
-router.get('/evento/festival/listaInscritosEventoLogPublic/:id_evento_fk/:categoria/:genero', async (req, res) => {
+router.get('/evento/festival/listaInscritosEventoLogPublic/:id_evento_fk/:categoria_alumno_festival/:genero_alumno_festival', async (req, res) => {
     try {
         const { id_evento_fk, categoria_alumno_festival, genero_alumno_festival} = req.params;
 
