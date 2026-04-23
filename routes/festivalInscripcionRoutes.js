@@ -395,7 +395,7 @@ router.get('/evento/festival/listaInscritosEventoLogPublic/:id_evento_fk/:catego
         }
 
         res.json(data);
-         
+
     } catch (err) {
         console.error('Error servidor:', err);
 
