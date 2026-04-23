@@ -350,4 +350,32 @@ router.get('/evento/lista_alumnos/festival_delegacion/:id_evento_fk/:id_delegaci
     }
 })
 
+//Obtener las categorias en ese evento ordenadas
+router.get('evento/festival/categoriasFiltradas/:id_evento_fk', async (req, res) => {
+    try {
+        const { id_evento_fk } = req.params;
+
+        const { data, error } = await supabase
+            .rpc('get_categorias_festival_ordenadas', {
+                p_evento: id_evento_fk
+            });
+
+         if (error) {
+            console.error('Error Supabase:', error);
+            return res.status(500).json({
+                message: 'Error en la consulta'
+            });
+        }
+
+        res.json(data);
+
+    } catch (err) {
+        console.error('Error servidor:', err);
+
+        return res.status(500).json({
+            message: 'Error interno del servidor'
+        });
+    }
+})
+
 module.exports = router;
