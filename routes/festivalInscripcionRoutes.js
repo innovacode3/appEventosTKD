@@ -445,4 +445,31 @@ router.post('/evento/festival/premiacion/agregar', async (req, res) => {
     }
 })
 
+//Obtener resultados
+router.get('/evento/festival/resultados/:id_evento_fk/:festival_categoria/:festival_genero', async (req, res) => {
+  const { id_evento_fk, festival_categoria, festival_genero } = req.params;
+
+  try {
+    const { data, error } = await supabase.rpc('get_resultados_festival', {
+      p_evento: id_evento_fk,
+      p_categoria: festival_categoria,
+      p_genero: festival_genero
+    });
+
+    if (error) {
+      console.error("Error:", error.message);
+      return res.status(500).json({ error: "Error al obtener resultados" });
+    }
+
+    res.json(data);
+
+  } catch (err) {
+    console.error('Error servidor:', err);
+
+    return res.status(500).json({
+        message: 'Error interno del servidor'
+    });
+  }
+});
+
 module.exports = router;
