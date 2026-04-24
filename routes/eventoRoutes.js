@@ -515,6 +515,12 @@ router.get('/evento/lista_delegaciones/:id_evento', (req, res) => {
             SELECT id_delegacion_fk
             FROM suscrito_alumno_poomsae
             WHERE id_evento_fk = $1
+
+            UNION
+
+            SELECT id_delegacion_fk
+            FROM suscrito_alumno_festival
+            WHERE id_evento_fk = $1
         ) AS delegaciones
         INNER JOIN registro_delegacion rd ON rd.id_delegacion = delegaciones.id_delegacion_fk
         ORDER BY rd.nombre_delegacion ASC`;
