@@ -498,4 +498,31 @@ router.get('/evento/resultadosGeneralFestival/:id_evento_fk', async (req, res) =
   }
 });
 
+//Medallas en festival
+router.get('/evento/medallasFestival/:id_evento_fk/:id_delegacion_fk', async (req, res) => {
+  const { id_evento_fk, id_delegacion_fk } = req.params;
+
+  try {
+
+    const { data, error } = await supabase.rpc('get_medallas_festival', {
+      p_evento: id_evento_fk,
+      p_delegacion: id_delegacion_fk
+    });
+
+    if (error) {
+      console.error(error.message);
+      return res.status(500).json({ error: "Error al obtener medallas" });
+    }
+
+    res.json(data?.[0] || { oro: 0, plata: 0, bronce: 0 });
+
+  } catch (err) {
+    console.error('Error servidor:', err);
+
+    return res.status(500).json({
+        message: 'Error interno del servidor'
+    });
+  }
+});
+
 module.exports = router;
