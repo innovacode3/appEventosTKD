@@ -405,4 +405,44 @@ router.get('/evento/festival/listaInscritosEventoLogPublic/:id_evento_fk/:catego
     }
 })
 
+////////////////////// Modo Administrador /////////////////////
+// Agregar resultados
+router.post('/evento/festival/premiacion/agregar', async (req, res) => {
+    const { p_evento, p_categoria, p_genero, p_datos } = req.body;
+
+    try {
+        // Validación básica
+        if (!p_evento || !p_categoria || !p_genero || !p_datos) {
+            return res.status(400).json({
+                error: "Faltan parámetros requeridos"
+            });
+        }
+
+        // Llamar a la RPC
+        const { error } = await supabase.rpc('upsert_premiacion_festival', {
+            p_evento,
+            p_categoria,
+            p_genero,
+            p_datos
+        });
+
+        if (error) {
+            console.error("Error al guardar premiación:", error.message);
+            return res.status(500).json({
+                error: "Error al guardar la premiación"
+            });
+        }
+
+        res.json({
+            mensaje: "Premiación guardada correctamente"
+        });
+    } catch(err) {
+        console.error('Error servidor:', err);
+
+        return res.status(500).json({
+            message: 'Error interno del servidor'
+        });
+    }
+})
+
 module.exports = router;
