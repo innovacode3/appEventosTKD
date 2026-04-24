@@ -472,4 +472,30 @@ router.get('/evento/festival/resultados/:id_evento_fk/:festival_categoria/:festi
   }
 });
 
+//Resultados generales en festival
+router.get('/evento/resultadosGeneralFestival/:id_evento_fk', async (req, res) => {
+  const { id_evento_fk } = req.params;
+
+  try {
+
+    const { data, error } = await supabase.rpc('get_resultados_generales_festival', {
+      p_evento: id_evento_fk
+    });
+
+    if (error) {
+      console.error("Error:", error.message);
+      return res.status(500).json({ error: "Error al obtener resultados generales" });
+    }
+
+    res.json(data || []);
+
+  } catch (err) {
+    console.error('Error servidor:', err);
+
+    return res.status(500).json({
+        message: 'Error interno del servidor'
+    });
+  }
+});
+
 module.exports = router;
