@@ -499,14 +499,14 @@ router.get('/evento/resultadosGeneralFestival/:id_evento_fk', async (req, res) =
 });
 
 //Medallas en festival
-router.get('/evento/medallasFestival/:id_evento_fk/:id_delegacion_fk', async (req, res) => {
-  const { id_evento_fk, id_delegacion_fk } = req.params;
+router.get('/evento/medallasFestival/:id_evento_fk/:nombre_delegacion', async (req, res) => {
+  const { id_evento_fk, nombre_delegacion } = req.params;
 
   try {
 
     const { data, error } = await supabase.rpc('get_medallas_festival', {
       p_evento: id_evento_fk,
-      p_delegacion: id_delegacion_fk
+      p_delegacion: nombre_delegacion
     });
 
     if (error) {
