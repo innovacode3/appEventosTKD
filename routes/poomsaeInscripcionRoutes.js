@@ -733,4 +733,56 @@ router.get('/log/administrador/evento/listaAlumnosPoomsae/:id_evento/:categoria/
     });
 });
 
+
+///////////////// Presentar filtrados y alumnos inscritos admin, log, public /////
+//Para obtener los categorias filtradas por modalidad
+router.get('/evento/poomsae/categorias/:id_evento_fk/:modalidad', async (req, res) => {
+  try {
+    const { id_evento_fk, modalidad } = req.params;
+
+    const { data, error } = await supabase
+        .rpc('get_categorias_poomsae', {
+        p_evento: id_evento_fk,
+        p_modalidad: modalidad
+        });
+
+    if (error) return res.status(500).json(error);
+
+    res.json(data);
+
+  } catch(err) {
+    console.error('Error servidor:', err);
+
+    return res.status(500).json({
+        message: 'Error interno del servidor'
+    });
+  }
+});
+
+//Para obtener los inscritos por los filtros
+router.get('/evento/poomsae/inscritosFiltrados', async (req, res) => {
+  try {
+    const { evento, modalidad, categoria, genero, cinturon } = req.query;
+
+    const { data, error } = await supabase.rpc('get_inscritos_poomsae', {
+        p_evento: evento,
+        p_modalidad: modalidad,
+        p_categoria: categoria,
+        p_genero: genero || null,
+        p_cinturon: cinturon
+    });
+
+    if (error) return res.status(500).json(error);
+
+    res.json(data);
+
+  } catch(err) {
+    console.error('Error servidor:', err);
+
+    return res.status(500).json({
+        message: 'Error interno del servidor'
+    });
+  }
+});
+
 module.exports = router;

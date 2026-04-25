@@ -820,5 +820,4 @@ router.get('/public/evento_combate/:id_evento_fk/:delegacion', (req, res) => {
     });
 });
 
-
 module.exports = router;
