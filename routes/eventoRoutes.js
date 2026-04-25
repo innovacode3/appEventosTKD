@@ -656,7 +656,7 @@ router.get('/evento/delegacion/lista_alumnos_inscritos_poomsae/:id_evento_fk/:id
 });
 
 // suma total de puntos por delegacion en un evento
-router.get('/evento/resultadosGeneral/:id_evento_fk', (req, res) => {
+/*router.get('/evento/resultadosGeneral/:id_evento_fk', (req, res) => {
     const {id_evento_fk} = req.params;
     const query = `SELECT 
                         delegacion,
@@ -759,6 +759,85 @@ router.get('/evento/resultadosGeneral/:id_evento_fk', (req, res) => {
         } else {
             res.json('No hay registros');
         }
+    });
+});*/
+
+router.get('/evento/resultadosGeneral/:id_evento_fk', (req, res) => {
+    const { id_evento_fk } = req.params;
+
+    // 👇 NUEVO: recibir ajustes
+    let extras = {};
+    try {
+        extras = req.query.extra ? JSON.parse(req.query.extra) : {};
+    } catch (e) {
+        extras = {};
+    }
+
+    const query = `
+        SELECT 
+            delegacion,
+            deportistas,
+            total_puntos,
+            medallas_oro,
+            medallas_plata,
+            medallas_bronce
+        FROM (
+            SELECT 
+                delegacion, 
+                SUM(total_puntaje) AS total_puntos,
+                SUM(num_deportistas) AS deportistas,
+                SUM(medallas_oro) AS medallas_oro,
+                SUM(medallas_plata) AS medallas_plata,
+                SUM(medallas_bronce) AS medallas_bronce
+            FROM (
+                SELECT 
+                    nombre_delegacion AS delegacion, 
+                    SUM(puntaje) AS total_puntaje,
+                    SUM(CASE 
+                        WHEN resultado IN ('MEDALLA DE ORO','MEDALLA DE PLATA','MEDALLA DE BRONCE') 
+                        AND puntaje > 0 THEN 1 ELSE 0 END) AS num_deportistas,
+                    SUM(CASE WHEN resultado = 'MEDALLA DE ORO' THEN 1 ELSE 0 END) AS medallas_oro,
+                    SUM(CASE WHEN resultado = 'MEDALLA DE PLATA' THEN 1 ELSE 0 END) AS medallas_plata,
+                    SUM(CASE WHEN resultado = 'MEDALLA DE BRONCE' THEN 1 ELSE 0 END) AS medallas_bronce
+                FROM llaves_competidor_resultado
+                WHERE id_evento_fk = $1
+                GROUP BY nombre_delegacion
+            ) AS base
+            GROUP BY delegacion
+        ) AS resultados
+    `;
+
+    db.query(query, [id_evento_fk], (error, resultado) => {
+        if (error) return console.log(error.message);
+
+        let rows = resultado.rows || [];
+
+        // 🔥 APLICAR AJUSTES
+        rows = rows.map(r => {
+            const ajuste = extras[r.delegacion] || 0;
+            return {
+                ...r,
+                total_puntos: Number(r.total_puntos) + ajuste
+            };
+        });
+
+        // 🔥 RECALCULAR RANKING
+        rows.sort((a, b) => {
+            if (b.total_puntos !== a.total_puntos)
+                return b.total_puntos - a.total_puntos;
+            if (b.medallas_oro !== a.medallas_oro)
+                return b.medallas_oro - a.medallas_oro;
+            if (b.medallas_plata !== a.medallas_plata)
+                return b.medallas_plata - a.medallas_plata;
+            return b.medallas_bronce - a.medallas_bronce;
+        });
+
+        rows = rows.map((r, i) => ({
+            ...r,
+            ubicacion: `${i + 1}°`
+        }));
+
+        res.json(rows);
     });
 });
 
