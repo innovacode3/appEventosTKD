@@ -44,7 +44,7 @@ router.get('/log/administrador/resultadosCompetidor/obtenerResultados/:id_evento
             END AS ubicacion
         FROM llaves_competidor_resultado
         WHERE id_evento_fk = $1 AND nivel = $2 AND nombre_categoria = $3
-              AND peso_categoria = $4 AND genero = $5 AND ubicacion != 'NADA'
+              AND peso_categoria = $4 AND genero = $5 AND ubicacion = 'NADA'
         ORDER BY
             puntaje DESC,
             CASE 
