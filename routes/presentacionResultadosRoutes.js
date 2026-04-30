@@ -5,30 +5,6 @@ const router = express.Router()
 const db = dbConnect();
 
 // Obtener la lista de resultados
-/*router.get('/log/administrador/resultadosCompetidor/obtenerResultados/:id_evento_fk/:nivel/:nombre_categoria/:peso_categoria/:genero', (req, res) => {
-    const { id_evento_fk, nivel, nombre_categoria, peso_categoria, genero } = req.params;
-
-    const sql = `SELECT * FROM llaves_competidor_resultado WHERE id_evento_fk = $1 AND nivel = $2 AND nombre_categoria = $3
-                AND peso_categoria = $4 AND genero = $5 AND ubicacion != 'NADA'
-                ORDER BY 
-                    puntaje DESC,
-                    CASE 
-                        WHEN ubicacion = 'PRIMER LUGAR' THEN 'PRIMER LUGAR 🥇'
-                        WHEN ubicacion = 'SEGUNDO LUGAR' THEN 'SEGUNDO LUGAR 🥈'
-                        WHEN ubicacion = 'TERCER LUGAR' THEN 'TERCER LUGAR 🥉'
-                        WHEN ubicacion = 'CUARTO LUGAR' THEN 'CUARTO LUGAR 🏅'
-                        ELSE 5
-                    END ASC`
-
-    db.query(sql, [id_evento_fk, nivel, nombre_categoria, peso_categoria, genero], (err, result) => {
-        if (err) {
-            console.error("Error al obtener los resultados: ", err.message)
-            return res.status(500).json({ error: "Error al obtener los datos" });
-        }
-        res.json(result.rows)
-    })
-})*/
-
 router.get('/log/administrador/resultadosCompetidor/obtenerResultados/:id_evento_fk/:nivel/:nombre_categoria/:peso_categoria/:genero', (req, res) => {
     const { id_evento_fk, nivel, nombre_categoria, peso_categoria, genero } = req.params;
 
