@@ -40,11 +40,12 @@ router.get('/log/administrador/resultadosCompetidor/obtenerResultados/:id_evento
                 WHEN ubicacion = 'SEGUNDO LUGAR' THEN 'SEGUNDO LUGAR 🥈'
                 WHEN ubicacion = 'TERCER LUGAR' THEN 'TERCER LUGAR 🥉'
                 WHEN ubicacion = 'CUARTO LUGAR' THEN 'CUARTO LUGAR 🏅'
+                WHEN ubicacion = 'NADA' THEN 'SIN POSICIÓN'
                 ELSE ubicacion
             END AS ubicacion
         FROM llaves_competidor_resultado
         WHERE id_evento_fk = $1 AND nivel = $2 AND nombre_categoria = $3
-              AND peso_categoria = $4 AND genero = $5 AND ubicacion = 'NADA'
+              AND peso_categoria = $4 AND genero = $5
         ORDER BY
             puntaje DESC,
             CASE 
