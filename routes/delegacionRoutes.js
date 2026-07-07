@@ -49,7 +49,8 @@ router.post('/delegacion/agregar', async (req, res) => {
         nombre_representante_delegacion,
         cedula_representante_delegacion,
         correo_representante_delegacion,
-        contrasena_delegacion
+        contrasena_delegacion,
+        pais_delegacion
     } = req.body;
 
     try {
@@ -65,7 +66,8 @@ router.post('/delegacion/agregar', async (req, res) => {
             _nombre_representante: nombre_representante_delegacion,
             _cedula_representante: cedula_representante_delegacion,
             _correo_representante: correo_representante_delegacion,
-            _contrasena: hashedPassword
+            _contrasena: hashedPassword,
+            _pais_delegacion: pais_delegacion
         });
 
         if (error) {
