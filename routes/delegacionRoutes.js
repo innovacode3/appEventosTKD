@@ -102,7 +102,8 @@ router.put('/log/delegacion/editar/:id', async (req, res) => {
         canton_delegacion,
         nombre_representante_delegacion,
         cedula_representante_delegacion,
-        correo_representante_delegacion
+        correo_representante_delegacion,
+        pais_delegacion
     } = req.body;
 
     try {
@@ -115,7 +116,8 @@ router.put('/log/delegacion/editar/:id', async (req, res) => {
         _canton: canton_delegacion,
         _nombre_representante: nombre_representante_delegacion,
         _cedula_representante: cedula_representante_delegacion,
-        _correo_representante: correo_representante_delegacion
+        _correo_representante: correo_representante_delegacion,
+        _pais_delegacion: pais_delegacion
         });
 
         if (error) {
