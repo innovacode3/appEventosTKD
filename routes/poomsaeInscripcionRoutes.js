@@ -220,17 +220,26 @@ router.post('/log/delegacion/evento/poomsae/inscribir', async (req, res) => {
             const categorias = new Set();
             const generos = new Set();
             const cinturones = new Set();
+            const niveles = new Set();
 
             participantes.forEach(p => {
                 categorias.add(p.categoria_suscrito_alumno_poomsae);
                 generos.add(p.genero_suscrito_alumno_poomsae);
                 cinturones.add(p.cinturon_suscrito_alumno_poomsae);
+                niveles.add(p.poomsae_nivel);
             });
 
             if (categorias.size !== 1) {
                 return res.status(400).json({
                     ok: false,
                     msg: 'Ambos deben ser de la misma categoría'
+                });
+            }
+
+            if (niveles.size !== 1) {
+                return res.status(400).json({
+                    ok: false,
+                    msg: 'Ambos deben tener el mismo nivel'
                 });
             }
 
@@ -274,17 +283,26 @@ router.post('/log/delegacion/evento/poomsae/inscribir', async (req, res) => {
             const categorias = new Set();
             const generos = new Set();
             const cinturones = new Set();
+            const niveles = new Set();
 
             participantes.forEach(p => {
                 categorias.add(p.categoria_suscrito_alumno_poomsae);
                 generos.add(p.genero_suscrito_alumno_poomsae);
                 cinturones.add(p.cinturon_suscrito_alumno_poomsae);
+                niveles.add(p.poomsae_nivel);
             });
 
             if (categorias.size !== 1) {
                 return res.status(400).json({
                     ok: false,
                     msg: 'Todos deben ser de la misma categoría'
+                });
+            }
+
+            if (niveles.size !== 1) {
+                return res.status(400).json({
+                    ok: false,
+                    msg: 'Todos deben tener el mismo nivel'
                 });
             }
 
@@ -352,13 +370,15 @@ router.post('/log/delegacion/evento/poomsae/inscribir', async (req, res) => {
 
             modalidad,
 
-            nivel_poomsae,
+            nivel_poomsae:
+                p.poomsae_nivel,
 
             equipo_id,
 
-            posicion: participantes.length > 1
-                ? index + 1
-                : null
+            posicion:
+                participantes.length > 1
+                    ? index + 1
+                    : null
 
         }));
 
