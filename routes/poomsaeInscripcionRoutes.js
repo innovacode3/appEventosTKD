@@ -370,8 +370,7 @@ router.post('/log/delegacion/evento/poomsae/inscribir', async (req, res) => {
 
             modalidad,
 
-            nivel_poomsae:
-                p.nivel_poomsae,
+            nivel_poomsae,
 
             equipo_id,
 
