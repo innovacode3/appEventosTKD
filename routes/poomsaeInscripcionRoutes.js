@@ -144,7 +144,7 @@ router.post('/log/delegacion/evento/poomsae/inscribir', async (req, res) => {
 
         const {
             modalidad,
-            poomsae_nivel,
+            nivel_poomsae,
             participantes
         } = req.body;
 
