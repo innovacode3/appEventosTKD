@@ -144,7 +144,7 @@ router.post('/log/delegacion/evento/poomsae/inscribir', async (req, res) => {
 
         const {
             modalidad,
-            nivel_poomsae,
+            poomsae_nivel,
             participantes
         } = req.body;
 
@@ -226,7 +226,7 @@ router.post('/log/delegacion/evento/poomsae/inscribir', async (req, res) => {
                 categorias.add(p.categoria_suscrito_alumno_poomsae);
                 generos.add(p.genero_suscrito_alumno_poomsae);
                 cinturones.add(p.cinturon_suscrito_alumno_poomsae);
-                niveles.add(p.poomsae_nivel);
+                niveles.add(p.nivel_poomsae);
             });
 
             if (categorias.size !== 1) {
@@ -289,7 +289,7 @@ router.post('/log/delegacion/evento/poomsae/inscribir', async (req, res) => {
                 categorias.add(p.categoria_suscrito_alumno_poomsae);
                 generos.add(p.genero_suscrito_alumno_poomsae);
                 cinturones.add(p.cinturon_suscrito_alumno_poomsae);
-                niveles.add(p.poomsae_nivel);
+                niveles.add(p.nivel_poomsae);
             });
 
             if (categorias.size !== 1) {
@@ -371,7 +371,7 @@ router.post('/log/delegacion/evento/poomsae/inscribir', async (req, res) => {
             modalidad,
 
             nivel_poomsae:
-                p.poomsae_nivel,
+                p.nivel_poomsae,
 
             equipo_id,
 
