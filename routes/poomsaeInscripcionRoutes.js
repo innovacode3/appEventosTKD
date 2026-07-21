@@ -414,14 +414,14 @@ router.put('/log/delegacion/evento/poomsae/poomsae_Inscripcion/actualizar/:id', 
         const { id } = req.params;
 
         const {
-            categoria_suscrito_alumno_poomsae,
+            categoria_suscrito_alumno_poomsae, nivel_poomsae
         } = req.body;
 
         // Update con Supabase
         const { data, error } = await supabase
             .from('suscrito_alumno_poomsae')
             .update({
-                categoria_suscrito_alumno_poomsae
+                categoria_suscrito_alumno_poomsae, nivel_poomsae
             })
             .eq('id_suscrito_alumno_poomsae', id)
             .select()
