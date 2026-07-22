@@ -850,25 +850,57 @@ router.get('/evento/poomsae/categorias/:id_evento_fk/:modalidad', async (req, re
 //Para obtener los inscritos por los filtros
 router.get('/evento/poomsae/inscritosFiltrados', async (req, res) => {
   try {
-    const { evento, modalidad, categoria, genero, cinturon } = req.query;
+    const {
+      evento,
+      modalidad,
+      categoria,
+      genero,
+      nivel,
+      cinturon
+    } = req.query;
 
-    const { data, error } = await supabase.rpc('get_inscritos_poomsae', {
+    // Validaciones mínimas
+    if (!evento || !modalidad || !categoria || !nivel || !cinturon) {
+      return res.status(400).json({
+        message: 'Faltan parámetros obligatorios',
+        parametrosRequeridos: [
+          'evento',
+          'modalidad',
+          'categoria',
+          'nivel',
+          'cinturon'
+        ]
+      });
+    }
+
+    const { data, error } = await supabase.rpc(
+      'get_inscritos_poomsae',
+      {
         p_evento: evento,
         p_modalidad: modalidad,
         p_categoria: categoria,
         p_genero: genero || null,
+        p_nivel: nivel,
         p_cinturon: cinturon
-    });
+      }
+    );
 
-    if (error) return res.status(500).json(error);
+    if (error) {
+      console.error('Error RPC get_inscritos_poomsae:', error);
 
-    res.json(data);
+      return res.status(500).json({
+        message: 'Error al obtener los inscritos de Poomsae',
+        error
+      });
+    }
 
-  } catch(err) {
+    return res.json(data || []);
+
+  } catch (err) {
     console.error('Error servidor:', err);
 
     return res.status(500).json({
-        message: 'Error interno del servidor'
+      message: 'Error interno del servidor'
     });
   }
 });
