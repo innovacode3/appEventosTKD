@@ -3,259 +3,178 @@ const dbConnect = require("../db/connect");
 
 const router = express.Router()
 const db = dbConnect();
+// conexión supabase
+const supabase = require('../db/supabaseClient');
+
+// Helper
+function normalizarResultadosPoomsae(
+  competidores
+) {
+  const modalidadesGrupales = new Set([
+    'Mixto',
+    'Equipo',
+    'Freestyle-Mixto',
+    'Freestyle-Equipo'
+  ]);
+
+  const equiposConPuntaje = new Set();
+
+  return competidores.map(competidor => {
+    const modalidad =
+      String(
+        competidor.poomsae_modalidad || ''
+      ).trim();
+
+    const esGrupal =
+      modalidadesGrupales.has(modalidad);
+
+    const equipoId =
+      competidor.equipo_id || null;
+
+    let puntaje =
+      Number(competidor.puntaje || 0);
+
+    if (!Number.isFinite(puntaje)) {
+      puntaje = 0;
+    }
+
+    if (esGrupal) {
+      if (!equipoId) {
+        throw new Error(
+          `La modalidad ${modalidad} requiere equipo_id`
+        );
+      }
+
+      if (equiposConPuntaje.has(equipoId)) {
+        puntaje = 0;
+      } else if (puntaje > 0) {
+        equiposConPuntaje.add(equipoId);
+      }
+    }
+
+    return {
+      id_evento_fk:
+        Number(competidor.id_evento_fk),
+
+      poomsae_categoria:
+        competidor.poomsae_categoria,
+
+      poomsae_cinturon:
+        competidor.poomsae_cinturon,
+
+      poomsae_genero:
+        competidor.poomsae_genero,
+
+      poomsae_cedula:
+        competidor.poomsae_cedula,
+
+      puntaje,
+
+      ubicacion:
+        competidor.ubicacion || 'NADA',
+
+      poomsae_modalidad:
+        modalidad,
+
+      equipo_id:
+        equipoId,
+
+      posicion:
+        competidor.posicion === null ||
+        competidor.posicion === undefined
+          ? null
+          : Number(competidor.posicion),
+
+      nivel_poomsae:
+        competidor.nivel_poomsae,
+
+      poomsae_nombres:
+        competidor.poomsae_nombres,
+
+      poomsae_apellidos:
+        competidor.poomsae_apellidos,
+
+      poomsae_nombre_delegacion:
+        competidor.poomsae_nombre_delegacion
+    };
+  });
+}
 
 // Para agregar los resultados a la base de datos
 router.post('/log/administrador/poomsae/resultados/agregar', async (req, res) => {
-
-    const competidores = req.body;
-
-    if (
-      !Array.isArray(competidores) ||
-      competidores.length === 0
-    ) {
-      return res.status(400).json({
-        message:
-          'Se requiere un arreglo de resultados'
-      });
-    }
-
-    const client = await db.connect();
-
     try {
-      await client.query('BEGIN');
+      const competidores = req.body;
 
-      const idEvento =
-        Number(competidores[0].id_evento_fk);
-
-      const eventoQuery = `
-        select
-          id_evento,
-          titulo_evento
-        from evento
-        where id_evento = $1
-        limit 1
-      `;
-
-      const eventoResultado =
-        await client.query(
-          eventoQuery,
-          [idEvento]
-        );
-
-      if (eventoResultado.rows.length === 0) {
-        throw new Error(
-          `No existe el evento ${idEvento}`
-        );
+      if (
+        !Array.isArray(competidores) ||
+        competidores.length === 0
+      ) {
+        return res.status(400).json({
+          message: 'Se requiere un arreglo de resultados'
+        });
       }
 
-      const evento =
-        eventoResultado.rows[0];
+      const idEvento = Number(
+        competidores[0].id_evento_fk
+      );
 
-      /*
-       * Seguridad adicional:
-       * en modalidad grupal dejamos un solo
-       * puntaje positivo por equipo.
-       */
-      const equiposConPuntaje = new Set();
+      if (!Number.isInteger(idEvento)) {
+        return res.status(400).json({
+          message: 'El identificador del evento no es válido'
+        });
+      }
 
-      for (const competidor of competidores) {
+      const eventoInconsistente = competidores.some(
+        competidor =>
+          Number(competidor.id_evento_fk) !== idEvento
+      );
 
-        let puntaje =
-          Number(competidor.puntaje || 0);
+      if (eventoInconsistente) {
+        return res.status(400).json({
+          message:
+            'Todos los resultados deben pertenecer al mismo evento'
+        });
+      }
 
-        const modalidadGrupal = [
-          'Mixto',
-          'Equipo',
-          'Freestyle-Mixto',
-          'Freestyle-Equipo'
-        ].includes(
-          competidor.poomsae_modalidad
-        );
+      const resultadosNormalizados =
+        normalizarResultadosPoomsae(competidores);
 
-        if (modalidadGrupal) {
-          if (!competidor.equipo_id) {
-            throw new Error(
-              'El resultado grupal no contiene equipo_id'
-            );
-          }
-
-          if (
-            puntaje > 0 &&
-            equiposConPuntaje.has(
-              competidor.equipo_id
-            )
-          ) {
-            puntaje = 0;
-          }
-
-          if (puntaje > 0) {
-            equiposConPuntaje.add(
-              competidor.equipo_id
-            );
-          }
+      const { data, error } = await supabase.rpc(
+        'guardar_resultados_poomsae',
+        {
+          p_id_evento: idEvento,
+          p_resultados: resultadosNormalizados
         }
+      );
 
-        const resultadoSql = `
-          insert into poomsae_resultado (
-            id_evento_fk,
-            poomsae_categoria,
-            poomsae_cinturon,
-            poomsae_genero,
-            poomsae_cedula,
-            puntaje,
-            ubicacion,
-            poomsae_modalidad,
-            equipo_id,
-            posicion,
-            nivel_poomsae,
-            poomsae_nombres,
-            poomsae_apellidos
-          )
-          values (
-            $1, $2, $3, $4, $5,
-            $6, $7, $8, $9, $10,
-            $11, $12, $13
-          )
-          on conflict (
-            id_evento_fk,
-            poomsae_modalidad,
-            poomsae_categoria,
-            nivel_poomsae,
-            poomsae_cedula
-          )
-          do update set
-            poomsae_cinturon =
-              excluded.poomsae_cinturon,
-            poomsae_genero =
-              excluded.poomsae_genero,
-            puntaje =
-              excluded.puntaje,
-            ubicacion =
-              excluded.ubicacion,
-            equipo_id =
-              excluded.equipo_id,
-            posicion =
-              excluded.posicion,
-            poomsae_nombres =
-              excluded.poomsae_nombres,
-            poomsae_apellidos =
-              excluded.poomsae_apellidos
-        `;
-
-        await client.query(
-          resultadoSql,
-          [
-            idEvento,
-            competidor.poomsae_categoria,
-            competidor.poomsae_cinturon,
-            competidor.poomsae_genero,
-            competidor.poomsae_cedula,
-            puntaje,
-            competidor.ubicacion || 'NADA',
-            competidor.poomsae_modalidad,
-            competidor.equipo_id || null,
-            competidor.posicion || null,
-            competidor.nivel_poomsae,
-            competidor.poomsae_nombres,
-            competidor.poomsae_apellidos
-          ]
+      if (error) {
+        console.error(
+          'Error RPC guardar_resultados_poomsae:',
+          error
         );
 
-        const historialSql = `
-          insert into historial_resultado_poomsae (
-            titulo_evento,
-            poomsae_categoria,
-            poomsae_cinturon,
-            poomsae_genero,
-            poomsae_cedula,
-            poomsae_nombres,
-            poomsae_apellidos,
-            poomsae_nombre_delegacion,
-            ubicacion,
-            id_evento,
-            poomsae_modalidad,
-            equipo_id,
-            posicion,
-            nivel_poomsae
-          )
-          values (
-            $1, $2, $3, $4, $5,
-            $6, $7, $8, $9, $10,
-            $11, $12, $13, $14
-          )
-          on conflict (
-            id_evento,
-            poomsae_modalidad,
-            poomsae_categoria,
-            nivel_poomsae,
-            poomsae_cedula
-          )
-          do update set
-            titulo_evento =
-              excluded.titulo_evento,
-            poomsae_cinturon =
-              excluded.poomsae_cinturon,
-            poomsae_genero =
-              excluded.poomsae_genero,
-            poomsae_nombres =
-              excluded.poomsae_nombres,
-            poomsae_apellidos =
-              excluded.poomsae_apellidos,
-            poomsae_nombre_delegacion =
-              excluded.poomsae_nombre_delegacion,
-            ubicacion =
-              excluded.ubicacion,
-            equipo_id =
-              excluded.equipo_id,
-            posicion =
-              excluded.posicion
-        `;
-
-        await client.query(
-          historialSql,
-          [
-            evento.titulo_evento,
-            competidor.poomsae_categoria,
-            competidor.poomsae_cinturon,
-            competidor.poomsae_genero,
-            competidor.poomsae_cedula,
-            competidor.poomsae_nombres,
-            competidor.poomsae_apellidos,
-            competidor
-              .poomsae_nombre_delegacion,
-            competidor.ubicacion || 'NADA',
-            idEvento,
-            competidor.poomsae_modalidad,
-            competidor.equipo_id || null,
-            competidor.posicion || null,
-            competidor.nivel_poomsae
-          ]
-        );
+        return res.status(500).json({
+          message:
+            'Error al guardar los resultados de Poomsae',
+          error
+        });
       }
-
-      await client.query('COMMIT');
 
       return res.status(200).json({
         message:
-          'Resultados de Poomsae guardados correctamente'
+          'Resultados de Poomsae guardados correctamente',
+        data
       });
 
     } catch (error) {
-      await client.query('ROLLBACK');
-
       console.error(
-        'Error al guardar resultados Poomsae:',
+        'Error del servidor al guardar Poomsae:',
         error
       );
 
       return res.status(500).json({
-        message:
-          error.message ||
-          'Error al guardar los resultados'
+        message: 'Error interno del servidor'
       });
-
-    } finally {
-      client.release();
     }
   }
 );
