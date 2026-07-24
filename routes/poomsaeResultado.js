@@ -152,4 +152,57 @@ router.get('/evento/poomsae/resultados/listar/:id_evento_fk/:categoria/:cinturon
     })
 })
 
+// Obtener competidores para premiacion
+router.get('/log/administrador/poomsae/premiacion/:id_evento/:modalidad/:categoria/:genero/:nivel/:cinturon', async (req, res) => {
+    try {
+      const {
+        id_evento,
+        modalidad,
+        categoria,
+        genero,
+        nivel,
+        cinturon
+      } = req.params;
+
+      const { data, error } = await supabase.rpc(
+        'get_competidores_poomsae_premiacion',
+        {
+          p_evento: Number(id_evento),
+          p_modalidad: modalidad,
+          p_categoria: categoria,
+          p_genero: genero,
+          p_nivel: nivel,
+          p_cinturon: cinturon
+        }
+      );
+
+      if (error) {
+        console.error(
+          'Error RPC premiación Poomsae:',
+          error
+        );
+
+        return res.status(500).json({
+          message:
+            'Error al obtener los competidores',
+          error
+        });
+      }
+
+      return res.json(data || []);
+
+    } catch (error) {
+      console.error(
+        'Error del servidor:',
+        error
+      );
+
+      return res.status(500).json({
+        message:
+          'Error interno del servidor'
+      });
+    }
+  }
+);
+
 module.exports = router;
