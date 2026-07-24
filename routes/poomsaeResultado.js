@@ -6,89 +6,259 @@ const db = dbConnect();
 
 // Para agregar los resultados a la base de datos
 router.post('/log/administrador/poomsae/resultados/agregar', async (req, res) => {
+
     const competidores = req.body;
-    if (!Array.isArray(competidores) || competidores.length === 0) {
-        return res.status(400).json({ error: "Se requiere un array de competidores" });
+
+    if (
+      !Array.isArray(competidores) ||
+      competidores.length === 0
+    ) {
+      return res.status(400).json({
+        message:
+          'Se requiere un arreglo de resultados'
+      });
     }
+
     const client = await db.connect();
+
     try {
-        await client.query('BEGIN');
+      await client.query('BEGIN');
 
-        for (const c of competidores) {
-            // 1. Insertar o actualizar en llaves_competidor_resultado
-            const insertSql = `
-                INSERT INTO poomsae_resultado (id_evento_fk, poomsae_categoria, poomsae_cinturon, poomsae_genero, poomsae_cedula, poomsae_nombres_competidor, poomsae_apellidos_competidor, poomsae_nombre_delegacion, resultado, puntaje, ubicacion)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-                ON CONFLICT (id_evento_fk, poomsae_categoria, poomsae_cinturon, poomsae_genero, poomsae_cedula, poomsae_nombres_competidor, poomsae_apellidos_competidor, poomsae_nombre_delegacion)
-                DO UPDATE SET 
-                    resultado = EXCLUDED.resultado,
-                    puntaje = EXCLUDED.puntaje,
-                    ubicacion = EXCLUDED.ubicacion`;
-            const insertValues = [
-                c.id_evento_fk,
-                c.poomsae_categoria,
-                c.poomsae_cinturon,
-                c.poomsae_genero,
-                c.poomsae_cedula,
-                c.poomsae_nombres_competidor, 
-                c.poomsae_apellidos_competidor, 
-                c.poomsae_nombre_delegacion, 
-                c.resultado, 
-                c.puntaje,
-                c.ubicacion
-            ];
-            await client.query(insertSql, insertValues);
-            // 2. Obtener el título del evento
-            const tituloQuery = `SELECT titulo_evento, id_evento, modalidad_evento, deporte_evento FROM evento WHERE id_evento = $1 LIMIT 1`;
-            const { rows } = await client.query(tituloQuery, [c.id_evento_fk]);
-            if (rows.length === 0) {
-                throw new Error(`No se encontró el evento con id ${c.id_evento_fk}`);
-            }
-            const titulo_evento = rows[0].titulo_evento;
-            const id_evento = rows[0].id_evento;
-            const modalidad_evento = rows[0].modalidad_evento;
-            const deporte_evento = rows[0].deporte_evento;
-            // 3. Insertar o actualizar en historial_resultado_poomsae
-            const historialSql = `
-                INSERT INTO historial_resultado_poomsae (titulo_evento, poomsae_categoria, poomsae_cinturon, poomsae_genero, poomsae_cedula, poomsae_nombres_competidor, poomsae_apellidos_competidor, poomsae_nombre_delegacion, resultado, ubicacion, id_evento, modalidad_evento, deporte_evento)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-                ON CONFLICT (titulo_evento, poomsae_categoria, poomsae_cinturon, poomsae_genero, poomsae_cedula, poomsae_nombres_competidor, poomsae_apellidos_competidor, poomsae_nombre_delegacion, id_evento, modalidad_evento, deporte_evento)
-                DO UPDATE SET 
-                    resultado = EXCLUDED.resultado,
-                    ubicacion = EXCLUDED.ubicacion`;
-            const historialValues = [
-                titulo_evento,
-                c.poomsae_categoria,
-                c.poomsae_cinturon,
-                c.poomsae_genero,
-                c.poomsae_cedula,
-                c.poomsae_nombres_competidor, 
-                c.poomsae_apellidos_competidor, 
-                c.poomsae_nombre_delegacion, 
-                c.resultado, 
-                c.ubicacion,
-                id_evento,
-                modalidad_evento,
-                deporte_evento
-            ];
+      const idEvento =
+        Number(competidores[0].id_evento_fk);
 
-            await client.query(historialSql, historialValues);
+      const eventoQuery = `
+        select
+          id_evento,
+          titulo_evento
+        from evento
+        where id_evento = $1
+        limit 1
+      `;
+
+      const eventoResultado =
+        await client.query(
+          eventoQuery,
+          [idEvento]
+        );
+
+      if (eventoResultado.rows.length === 0) {
+        throw new Error(
+          `No existe el evento ${idEvento}`
+        );
+      }
+
+      const evento =
+        eventoResultado.rows[0];
+
+      /*
+       * Seguridad adicional:
+       * en modalidad grupal dejamos un solo
+       * puntaje positivo por equipo.
+       */
+      const equiposConPuntaje = new Set();
+
+      for (const competidor of competidores) {
+
+        let puntaje =
+          Number(competidor.puntaje || 0);
+
+        const modalidadGrupal = [
+          'Mixto',
+          'Equipo',
+          'Freestyle-Mixto',
+          'Freestyle-Equipo'
+        ].includes(
+          competidor.poomsae_modalidad
+        );
+
+        if (modalidadGrupal) {
+          if (!competidor.equipo_id) {
+            throw new Error(
+              'El resultado grupal no contiene equipo_id'
+            );
+          }
+
+          if (
+            puntaje > 0 &&
+            equiposConPuntaje.has(
+              competidor.equipo_id
+            )
+          ) {
+            puntaje = 0;
+          }
+
+          if (puntaje > 0) {
+            equiposConPuntaje.add(
+              competidor.equipo_id
+            );
+          }
         }
-        await client.query('COMMIT');
 
-        res.status(200).send({
-            message: 'Resultados agregados y actualizados correctamente en ambas tablas',
-        });
+        const resultadoSql = `
+          insert into poomsae_resultado (
+            id_evento_fk,
+            poomsae_categoria,
+            poomsae_cinturon,
+            poomsae_genero,
+            poomsae_cedula,
+            puntaje,
+            ubicacion,
+            poomsae_modalidad,
+            equipo_id,
+            posicion,
+            nivel_poomsae,
+            poomsae_nombres,
+            poomsae_apellidos
+          )
+          values (
+            $1, $2, $3, $4, $5,
+            $6, $7, $8, $9, $10,
+            $11, $12, $13
+          )
+          on conflict (
+            id_evento_fk,
+            poomsae_modalidad,
+            poomsae_categoria,
+            nivel_poomsae,
+            poomsae_cedula
+          )
+          do update set
+            poomsae_cinturon =
+              excluded.poomsae_cinturon,
+            poomsae_genero =
+              excluded.poomsae_genero,
+            puntaje =
+              excluded.puntaje,
+            ubicacion =
+              excluded.ubicacion,
+            equipo_id =
+              excluded.equipo_id,
+            posicion =
+              excluded.posicion,
+            poomsae_nombres =
+              excluded.poomsae_nombres,
+            poomsae_apellidos =
+              excluded.poomsae_apellidos
+        `;
+
+        await client.query(
+          resultadoSql,
+          [
+            idEvento,
+            competidor.poomsae_categoria,
+            competidor.poomsae_cinturon,
+            competidor.poomsae_genero,
+            competidor.poomsae_cedula,
+            puntaje,
+            competidor.ubicacion || 'NADA',
+            competidor.poomsae_modalidad,
+            competidor.equipo_id || null,
+            competidor.posicion || null,
+            competidor.nivel_poomsae,
+            competidor.poomsae_nombres,
+            competidor.poomsae_apellidos
+          ]
+        );
+
+        const historialSql = `
+          insert into historial_resultado_poomsae (
+            titulo_evento,
+            poomsae_categoria,
+            poomsae_cinturon,
+            poomsae_genero,
+            poomsae_cedula,
+            poomsae_nombres,
+            poomsae_apellidos,
+            poomsae_nombre_delegacion,
+            ubicacion,
+            id_evento,
+            poomsae_modalidad,
+            equipo_id,
+            posicion,
+            nivel_poomsae
+          )
+          values (
+            $1, $2, $3, $4, $5,
+            $6, $7, $8, $9, $10,
+            $11, $12, $13, $14
+          )
+          on conflict (
+            id_evento,
+            poomsae_modalidad,
+            poomsae_categoria,
+            nivel_poomsae,
+            poomsae_cedula
+          )
+          do update set
+            titulo_evento =
+              excluded.titulo_evento,
+            poomsae_cinturon =
+              excluded.poomsae_cinturon,
+            poomsae_genero =
+              excluded.poomsae_genero,
+            poomsae_nombres =
+              excluded.poomsae_nombres,
+            poomsae_apellidos =
+              excluded.poomsae_apellidos,
+            poomsae_nombre_delegacion =
+              excluded.poomsae_nombre_delegacion,
+            ubicacion =
+              excluded.ubicacion,
+            equipo_id =
+              excluded.equipo_id,
+            posicion =
+              excluded.posicion
+        `;
+
+        await client.query(
+          historialSql,
+          [
+            evento.titulo_evento,
+            competidor.poomsae_categoria,
+            competidor.poomsae_cinturon,
+            competidor.poomsae_genero,
+            competidor.poomsae_cedula,
+            competidor.poomsae_nombres,
+            competidor.poomsae_apellidos,
+            competidor
+              .poomsae_nombre_delegacion,
+            competidor.ubicacion || 'NADA',
+            idEvento,
+            competidor.poomsae_modalidad,
+            competidor.equipo_id || null,
+            competidor.posicion || null,
+            competidor.nivel_poomsae
+          ]
+        );
+      }
+
+      await client.query('COMMIT');
+
+      return res.status(200).json({
+        message:
+          'Resultados de Poomsae guardados correctamente'
+      });
 
     } catch (error) {
-        await client.query('ROLLBACK');
-        console.error('Error al procesar resultados:', error);
-        res.status(500).send('Error al guardar los datos en la base de datos');
-    } finally {
-        client.release();
-    }
+      await client.query('ROLLBACK');
 
-})
+      console.error(
+        'Error al guardar resultados Poomsae:',
+        error
+      );
+
+      return res.status(500).json({
+        message:
+          error.message ||
+          'Error al guardar los resultados'
+      });
+
+    } finally {
+      client.release();
+    }
+  }
+);
 
 // Para listar los resultados
 router.get('/log/administrador/poomsae/resultados/obtenerLista/:id_evento_fk/:poomsae_categoria/:poomsae_genero', (req, res) => {
