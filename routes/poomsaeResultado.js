@@ -179,67 +179,230 @@ router.post('/log/administrador/poomsae/resultados/agregar', async (req, res) =>
   }
 );
 
-// Para listar los resultados
-router.get('/log/administrador/poomsae/resultados/obtenerLista/:id_evento_fk/:poomsae_categoria/:poomsae_genero', (req, res) => {
-    const {id_evento_fk, poomsae_categoria, poomsae_genero} = req.params;
-    const sql = `SELECT * FROM poomsae_resultado
-                WHERE id_evento_fk = $1 AND poomsae_categoria = $2 AND poomsae_genero = $3
-                ORDER BY
-                CASE
-                    WHEN poomsae_cinturon = 'Negro' THEN 1
-                    WHEN poomsae_cinturon = 'Rojo-Negro' THEN 2
-                    WHEN poomsae_cinturon = 'Rojo' THEN 3
-                    WHEN poomsae_cinturon = 'Azul-Rojo' THEN 4
-                    WHEN poomsae_cinturon = 'Azul' THEN 5
-                    WHEN poomsae_cinturon = 'Verde-Azul' THEN 6
-                    WHEN poomsae_cinturon = 'Verde' THEN 7
-                    WHEN poomsae_cinturon = 'Amarillo-Verde' THEN 8
-                    WHEN poomsae_cinturon = 'Amarillo' THEN 9
-                    WHEN poomsae_cinturon = 'Blanco-Amarillo' THEN 10
-                    WHEN poomsae_cinturon = 'Blanco' THEN 11
-                    ELSE 12
-                END,
-                puntaje DESC`;
-    db.query(sql, [id_evento_fk, poomsae_categoria, poomsae_genero], (err, result) => {
-        if (err) {
-            console.error("Error al obtener los resultados: ", err.message);
-            return res.status(500).json({ error: "Error al obtener los datos" });
-        }
-        // Siempre devuelve un array, aunque esté vacío
-        res.json(result.rows);
-    })        
-})
+// Para obtener modalidades
+router.get('/log/administrador/poomsae/resultados/modalidades/:id_evento', async (req, res) => {
+    try {
+      const { id_evento } = req.params;
 
-// Eliminar la lista de resultados
-router.delete('/log/administrador/poomsae/resultados/eliminar/:id', (req, res) => {
-    const { id } = req.params;
-    const sql = `DELETE FROM poomsae_resultado WHERE id_poomsae_resultado = $1`;
-    db.query(sql, [id], (err, result) => {
-        if (err) {
-            console.error(err.message);
-            return res.status(500).json({ error: "Error al eliminar el resultado" });
+      const { data, error } = await supabase.rpc(
+        'obtener_modalidades_resultados_poomsae',
+        {
+          p_id_evento: Number(id_evento)
         }
-        res.json('Se eliminó correctamente el resultado');
-    })
-})
+      );
 
-// Lista de resultados usuario
-router.get('/evento/poomsae/resultados/listar/:id_evento_fk/:categoria/:cinturon/:genero', (req, res) => {
-    const {id_evento_fk, categoria, cinturon, genero} = req.params;
-    const sql = `SELECT * FROM poomsae_resultado WHERE id_evento_fk = $1 AND poomsae_categoria = $2 AND poomsae_cinturon = $3 AND poomsae_genero = $4
-                ORDER BY puntaje DESC`;
-    db.query(sql, [id_evento_fk, categoria, cinturon, genero], (err, result) => {
-        if (err) {
-            console.error("Error al obtener los resultados: ", err.message)
-            return res.status(500).json({ error: "Error al obtener los datos" });
+      if (error) {
+        console.error(
+          'Error modalidades Poomsae:',
+          error
+        );
+
+        return res.status(500).json({
+          message:
+            'No se pudieron obtener las modalidades.'
+        });
+      }
+
+      const modalidades = (data || []).map(
+        item => item.modalidad
+      );
+
+      return res.json(modalidades);
+
+    } catch (error) {
+      console.error(
+        'Error del servidor:',
+        error
+      );
+
+      return res.status(500).json({
+        message:
+          'Error interno del servidor.'
+      });
+    }
+  }
+);
+
+// Para obtener categorias
+router.get('/log/administrador/poomsae/resultados/categorias/:id_evento/:modalidad', async (req, res) => {
+    try {
+      const {
+        id_evento,
+        modalidad
+      } = req.params;
+
+      const { data, error } = await supabase.rpc(
+        'obtener_categorias_resultados_poomsae',
+        {
+          p_id_evento: Number(id_evento),
+          p_modalidad: modalidad
         }
-        if (result.rows.length > 0) {
-            res.json(result.rows)
-        } else {
-            res.status(404).json({ mensaje: "No hay registros" });
+      );
+
+      if (error) {
+        console.error(
+          'Error categorías Poomsae:',
+          error
+        );
+
+        return res.status(500).json({
+          message:
+            'No se pudieron obtener las categorías.'
+        });
+      }
+
+      const categorias = (data || []).map(
+        item => item.categoria
+      );
+
+      return res.json(categorias);
+
+    } catch (error) {
+      console.error(
+        'Error del servidor:',
+        error
+      );
+
+      return res.status(500).json({
+        message:
+          'Error interno del servidor.'
+      });
+    }
+  }
+);
+
+
+// Lista de resultados
+router.get('/log/administrador/poomsae/resultados/obtenerLista/:id_evento/:modalidad/:categoria', async (req, res) => {
+    try {
+      const {
+        id_evento,
+        modalidad,
+        categoria
+      } = req.params;
+
+      const { data, error } = await supabase.rpc(
+        'obtener_lista_resultados_poomsae',
+        {
+          p_id_evento: Number(id_evento),
+          p_modalidad: modalidad,
+          p_categoria: categoria
         }
-    })
-})
+      );
+
+      if (error) {
+        console.error(
+          'Error listado resultados Poomsae:',
+          error
+        );
+
+        return res.status(500).json({
+          message:
+            'No se pudieron obtener los resultados.'
+        });
+      }
+
+      return res.json(data || []);
+
+    } catch (error) {
+      console.error(
+        'Error del servidor:',
+        error
+      );
+
+      return res.status(500).json({
+        message:
+          'Error interno del servidor.'
+      });
+    }
+  }
+);
+
+// Eliminar individual
+router.delete('/log/administrador/poomsae/resultados/eliminar/individual/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      const { data, error } = await supabase.rpc(
+        'eliminar_resultado_poomsae_individual',
+        {
+          p_id_resultado: Number(id)
+        }
+      );
+
+      if (error) {
+        console.error(
+          'Error eliminando resultado individual:',
+          error
+        );
+
+        return res.status(500).json({
+          message:
+            error.message ||
+            'No se pudo eliminar el resultado.'
+        });
+      }
+
+      return res.json(data);
+
+    } catch (error) {
+      console.error(
+        'Error del servidor:',
+        error
+      );
+
+      return res.status(500).json({
+        message:
+          'Error interno del servidor.'
+      });
+    }
+  }
+);
+
+// Eliminar mixto o equipo
+router.delete('/log/administrador/poomsae/resultados/eliminar/equipo/:id_evento/:equipo_id', async (req, res) => {
+    try {
+      const {
+        id_evento,
+        equipo_id
+      } = req.params;
+
+      const { data, error } = await supabase.rpc(
+        'eliminar_resultado_poomsae_equipo',
+        {
+          p_id_evento: Number(id_evento),
+          p_equipo_id: equipo_id
+        }
+      );
+
+      if (error) {
+        console.error(
+          'Error eliminando equipo Poomsae:',
+          error
+        );
+
+        return res.status(500).json({
+          message:
+            error.message ||
+            'No se pudo eliminar el equipo.'
+        });
+      }
+
+      return res.json(data);
+
+    } catch (error) {
+      console.error(
+        'Error del servidor:',
+        error
+      );
+
+      return res.status(500).json({
+        message:
+          'Error interno del servidor.'
+      });
+    }
+  }
+);
 
 // Obtener competidores para premiacion
 router.get('/log/administrador/poomsae/premiacion/:id_evento/:modalidad/:categoria/:genero/:nivel/:cinturon', async (req, res) => {
