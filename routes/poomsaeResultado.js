@@ -457,4 +457,110 @@ router.get('/log/administrador/poomsae/premiacion/:id_evento/:modalidad/:categor
   }
 );
 
+//Obtener resultados publico y logueado
+router.get(
+  '/evento/poomsae/resultados/:id_evento/:modalidad/:categoria/:genero/:nivel/:cinturon',
+  async (req, res) => {
+    try {
+      const {
+        id_evento,
+        modalidad,
+        categoria,
+        genero,
+        nivel,
+        cinturon
+      } = req.params;
+
+      const { data, error } = await supabase.rpc(
+        'obtener_resultados_publicos_poomsae',
+        {
+          p_id_evento: Number(id_evento),
+          p_modalidad: modalidad,
+          p_categoria: categoria,
+          p_genero: genero,
+          p_nivel: nivel,
+          p_cinturon: cinturon
+        }
+      );
+
+      if (error) {
+        console.error(
+          'Error obteniendo resultados públicos:',
+          error
+        );
+
+        return res.status(500).json({
+          message:
+            'No se pudieron obtener los resultados.'
+        });
+      }
+
+      return res.json(data || []);
+
+    } catch (error) {
+      console.error(
+        'Error interno resultados Poomsae:',
+        error
+      );
+
+      return res.status(500).json({
+        message:
+          'Error interno del servidor.'
+      });
+    }
+  }
+);
+
+//Listar los resultados publico-logueado
+router.get('/evento/poomsae/resultados/:id_evento/:modalidad/:categoria/:genero/:nivel/:cinturon', async (req, res) => {
+    try {
+      const {
+        id_evento,
+        modalidad,
+        categoria,
+        genero,
+        nivel,
+        cinturon
+      } = req.params;
+
+      const { data, error } = await supabase.rpc(
+        'obtener_resultados_publicos_poomsae',
+        {
+          p_id_evento: Number(id_evento),
+          p_modalidad: modalidad,
+          p_categoria: categoria,
+          p_genero: genero,
+          p_nivel: nivel,
+          p_cinturon: cinturon
+        }
+      );
+
+      if (error) {
+        console.error(
+          'Error obteniendo resultados públicos:',
+          error
+        );
+
+        return res.status(500).json({
+          message:
+            'No se pudieron obtener los resultados.'
+        });
+      }
+
+      return res.json(data || []);
+
+    } catch (error) {
+      console.error(
+        'Error interno resultados Poomsae:',
+        error
+      );
+
+      return res.status(500).json({
+        message:
+          'Error interno del servidor.'
+      });
+    }
+  }
+);
+
 module.exports = router;
