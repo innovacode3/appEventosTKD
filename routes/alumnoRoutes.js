@@ -165,27 +165,52 @@ router.delete('/log/delegacion/alumno/borrar/:cedula', async (req, res) => {
 
 //Obtener un alumno por cédula
 router.get('/log/delegacion/registro_alumno/ced/:id_delegacion_fk/:cedula', async (req, res) => {
-    const { id_delegacion_fk , cedula } = req.params;
+    const { id_delegacion_fk, cedula } = req.params;
+
     try {
-        const { data, error } = await supabase
-            .from('registro_alumno')
-            .select('*')
-            .eq('id_delegacion_fk', id_delegacion_fk)
-            .eq('cedula_alumno', cedula)
-            .single()
-        
-        if (error) {
-          console.error("Error al obtener alumno:", error.message);
-          return res.status(500).json({ error: "Error al obtener los datos" });
-        }
-        if (!data) {
-            return res.status(404).json({ mensaje: 'No hay registro con esa cédula' });
-        }
-        res.json(data);
+      const cedulaLimpia = String(cedula).trim();
+      const idDelegacion = Number(id_delegacion_fk);
+
+      if (!idDelegacion || !cedulaLimpia) {
+        return res.status(400).json({
+          mensaje: 'La delegación y la cédula son obligatorias'
+        });
+      }
+
+      const { data, error } = await supabase
+        .from('registro_alumno')
+        .select('*')
+        .eq('id_delegacion_fk', idDelegacion)
+        .eq('cedula_alumno', cedulaLimpia)
+        .limit(1);
+
+      if (error) {
+        console.error('Error al obtener alumno:', error);
+
+        return res.status(500).json({
+          mensaje: 'Error al obtener los datos',
+          error: error.message
+        });
+      }
+
+      if (!data || data.length === 0) {
+        return res.status(404).json({
+          mensaje: 'No hay un alumno registrado con esa cédula en esta delegación'
+        });
+      }
+
+      return res.status(200).json(data[0]);
+
     } catch (error) {
-        res.status(500).json({ error: err.message || err });
+      console.error('Error interno al obtener alumno:', error);
+
+      return res.status(500).json({
+        mensaje: 'Error interno del servidor',
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
-});
+  }
+);
 
 //Endpoint para que se actualice automaticamente desde vercel
 router.get('/prueba-cron', async (req, res) => {
