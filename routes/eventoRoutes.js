@@ -256,7 +256,7 @@ router.post('/log/administrador/evento/agregar', upload.single('imagenEvento'), 
             puntaje_2,
             puntaje_3,
             nivel_poomsae,
-            esMixto_equipo
+            esMixto_Equipo
         } = req.body;
 
         if (!titulo_evento || !url_reglamento_evento || !fecha_limite_inscripcion_evento || !estado_evento || !direccion_evento || !ubicacion_evento || !fecha_evento || !modalidad_evento
@@ -284,7 +284,7 @@ router.post('/log/administrador/evento/agregar', upload.single('imagenEvento'), 
                 puntaje_2,
                 puntaje_3,
                 nivel_poomsae: nivelesPoomsae,
-                esMixto_equipo
+                esMixto_Equipo
             }])
             .select()
             .single();
