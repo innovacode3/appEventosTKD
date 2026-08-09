@@ -255,11 +255,12 @@ router.post('/log/administrador/evento/agregar', upload.single('imagenEvento'), 
             puntaje_1,
             puntaje_2,
             puntaje_3,
-            nivel_poomsae
+            nivel_poomsae,
+            esMixto_equipo
         } = req.body;
 
         if (!titulo_evento || !url_reglamento_evento || !fecha_limite_inscripcion_evento || !estado_evento || !direccion_evento || !ubicacion_evento || !fecha_evento || !modalidad_evento
-            || !categorias_evento || !nivel_evento || !deporte_evento || !puntaje_1 || !puntaje_2 || !puntaje_3 || !nivel_poomsae) {
+            || !categorias_evento || !nivel_evento || !deporte_evento || !puntaje_1 || !puntaje_2 || !puntaje_3 || !nivel_poomsae || !esMixto_Equipo) {
             return res.status(400).json({ message: 'Datos inválidos' });
         }
 
@@ -282,7 +283,8 @@ router.post('/log/administrador/evento/agregar', upload.single('imagenEvento'), 
                 puntaje_1,
                 puntaje_2,
                 puntaje_3,
-                nivel_poomsae: nivelesPoomsae
+                nivel_poomsae: nivelesPoomsae,
+                esMixto_equipo
             }])
             .select()
             .single();
@@ -316,11 +318,12 @@ router.put('/log/administrador/evento/editar/:id', upload.single('imagenEvento')
             puntaje_1,
             puntaje_2,
             puntaje_3,
-            nivel_poomsae
+            nivel_poomsae,
+            esMixto_Equipo
         } = req.body;
 
         if (!titulo_evento || !url_reglamento_evento || !fecha_limite_inscripcion_evento || !estado_evento || !direccion_evento || !ubicacion_evento || !fecha_evento || !modalidad_evento
-            || !categorias_evento || !nivel_evento || !deporte_evento || puntaje_1 === undefined || puntaje_2 === undefined || puntaje_3 === undefined || !nivel_poomsae) {
+            || !categorias_evento || !nivel_evento || !deporte_evento || puntaje_1 === undefined || puntaje_2 === undefined || puntaje_3 === undefined || !nivel_poomsae || !esMixto_Equipo) {
             return res.status(400).json({ message: 'Datos inválidos' });
         }
 
@@ -437,7 +440,8 @@ router.put('/log/administrador/evento/editar/:id', upload.single('imagenEvento')
                 puntaje_1,
                 puntaje_2,
                 puntaje_3,
-                nivel_poomsae: nivelesPoomsaeArray
+                nivel_poomsae: nivelesPoomsaeArray,
+                esMixto_Equipo
             })
             .eq('id_evento', id)
             .select()
