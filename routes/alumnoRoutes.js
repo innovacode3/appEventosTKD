@@ -228,9 +228,7 @@ router.get('/prueba-cron', async (req, res) => {
 
     console.log('CRON FINALIZADO:', new Date().toISOString());
 
-    return res.status(200).json({
-        mensaje: 'Edades actualizadas correctamente'
-    });
+    res.send('Cron ejecutado: edades actualizadas correctamente');
   } catch (err) {
     console.error('Error inesperado:', err);
     res.status(500).send('Error interno al ejecutar el cron');
