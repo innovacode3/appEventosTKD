@@ -215,6 +215,9 @@ router.get('/log/delegacion/registro_alumno/ced/:id_delegacion_fk/:cedula', asyn
 //Endpoint para que se actualice automaticamente desde vercel
 router.get('/prueba-cron', async (req, res) => {
   try {
+    console.log('CRON INICIADO:', new Date().toISOString());
+    console.log('User-Agent:', req.headers['user-agent']);
+
     // Ejecutamos directamente la actualización en Supabase
     const { error } = await supabase.rpc('actualizar_edades_alumnos');
 
@@ -223,7 +226,11 @@ router.get('/prueba-cron', async (req, res) => {
       return res.status(500).json({ error: 'Error ejecutando RPC en Supabase' });
     }
 
-    res.send('Cron ejecutado: edades actualizadas correctamente');
+    console.log('CRON FINALIZADO:', new Date().toISOString());
+
+    return res.status(200).json({
+        mensaje: 'Edades actualizadas correctamente'
+    });
   } catch (err) {
     console.error('Error inesperado:', err);
     res.status(500).send('Error interno al ejecutar el cron');
