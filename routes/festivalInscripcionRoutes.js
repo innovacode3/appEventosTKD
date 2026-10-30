@@ -290,7 +290,7 @@ router.delete('/log/delegacion/festival/eliminar/:id', async (req, res) => {
     }
 });
 
-//Obtener la lista de alumnos inscritos por delegacion para admin, public, loguedo
+//Obtener la lista de alumnos inscritos por evento para admin, public, loguedo
 router.get('/evento/lista_alumnos_festival/:id_evento_fk', async (req, res) => {
     try {
         const { id_evento_fk } = req.params;
@@ -318,7 +318,7 @@ router.get('/evento/lista_alumnos_festival/:id_evento_fk', async (req, res) => {
     }
 })
 
-//Obtener la lista de alumnos inscritos por delegacion para admin, public, loguedo (id_evento, id_delegacion)
+//Obtener la lista de alumnos inscritos por evento y delegacion para admin, public, loguedo (id_evento, id_delegacion)
 router.get('/evento/lista_alumnos/festival_delegacion/:id_evento_fk/:id_delegacion_fk', async (req, res) => {
     try {
         const { id_evento_fk, id_delegacion_fk } = req.params;
