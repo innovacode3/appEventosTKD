@@ -346,7 +346,32 @@ router.get('/evento/lista_alumnos/campamento_delegacion/:id_evento_fk/:id_delega
 })
 
 //Obtener las categorias en ese evento ordenados
+router.get('/evento/campamento/categoriasFiltradas/:id_evento_fk', async (req, res) => {
+    try {
+        const { id_evento_fk } = req.params;
 
+        const { data, error } = await supabase
+            .rpc('get_categorias_campamento_ordenadas', {
+                p_evento: id_evento_fk
+            });
+
+        if (error) {
+            console.error('Error Supabase:', error);
+            return res.status(500).json({
+                message: 'Error en la consulta'
+            });
+        }
+
+        res.json(data);
+
+    } catch (err) {
+        console.error('Error servidor:', err);
+
+        return res.status(500).json({
+            message: 'Error interno del servidor'
+        });
+    }
+})
 
 //Obtener los alumnos inscritos por evento, categoria, genero
 
