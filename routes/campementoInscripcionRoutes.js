@@ -374,6 +374,32 @@ router.get('/evento/campamento/categoriasFiltradas/:id_evento_fk', async (req, r
 })
 
 //Obtener los alumnos inscritos por evento, categoria, genero
+router.get('/evento/campamento/listaInscritosCampamentoLogPublic/:id_evento_fk/:categoria_campamento/:genero_campamento', async (req, res) => {
+    try {
+        const {id_evento_fk, categoria_campamento, genero_campamento} = req.params;
 
+        const { data, error } = await supabase
+            .rpc('get_listado_campamento_log_public', {
+                p_evento: id_evento_fk,
+                p_categoria: categoria_campamento,
+                p_genero: genero_campamento
+            });
+        
+        if (error) {
+            console.error('Error Supabase:', error);
+            return res.status(500).json({
+                message: 'Error en la consulta'
+            });
+        }
+
+        res.json(data);
+    } catch (err) {
+        console.error('Error servidor:', err);
+
+        return res.status(500).json({
+            message: 'Error interno del servidor'
+        });
+    }
+})
 
 module.exports = router;
