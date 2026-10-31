@@ -236,7 +236,7 @@ router.put('/log/delegacion/campamento/editar/:id', async (req, res) => {
             ok: true,
             actualizado: data
         });
-        
+
     } catch (err) {
         console.error('Error servidor:', err);
 
@@ -247,7 +247,47 @@ router.put('/log/delegacion/campamento/editar/:id', async (req, res) => {
 })
 
 //Eliminar alumno inscrito campamento
+router.delete('/log/delegacion/campamento/eliminar/:id', async (req, res) => {
+    try{
+        const {id} = req.params;
 
+        if (!id) {
+            return res.status(400).json({
+                ok: false,
+                msg: 'ID requerido'
+            });
+        }
+
+        //Eliminar registro
+        const {data, error} = await supabase
+            .from('suscrito_alumno_campamento')
+            .delete()
+            .eq('id_suscrito_alumno_campamento', id)
+            .select(); //importante para saber qué se eliminó
+        
+        if (error) throw error;
+
+        // Validar si existía
+        if (!data || data.length === 0) {
+            return res.status(404).json({
+                ok: false,
+                msg: 'Registro no encontrado'
+            });
+        }
+
+        res.json({
+            ok: true,
+            eliminado: data
+        });
+        
+    } catch (err) {
+        console.error('Error servidor:', err);
+
+        return res.status(500).json({
+            message: 'Error interno del servidor'
+        });
+    }
+})
 
 //Obtener la lista de alumnos inscritos por evento para admin, public, logueado (ver inscritos)
 
