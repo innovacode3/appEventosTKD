@@ -14,6 +14,7 @@ const poomsaeInscripcionRoutes = require("./routes/poomsaeInscripcionRoutes");
 const poomsaeResultado = require("./routes/poomsaeResultado");
 const historialCompetencia = require("./routes/historialCompetenciaRoutes");
 const festivalInscripcionRoutes = require("./routes/festivalInscripcionRoutes");
+const campamentoInscripcionRoutes = require("./routes/campementoInscripcionRoutes");
 require('dotenv').config();
 
 const app = express();
@@ -48,7 +49,8 @@ const routes = [
   poomsaeInscripcionRoutes,
   poomsaeResultado,
   historialCompetencia,
-  festivalInscripcionRoutes
+  festivalInscripcionRoutes,
+  campamentoInscripcionRoutes
 ];
 
 routes.forEach(route => app.use(route));
