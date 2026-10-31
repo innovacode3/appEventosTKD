@@ -318,7 +318,32 @@ router.get('/evento/lista_alumnos_campamento/:id_evento_fk', async (req, res) =>
 })
 
 //Obtener la lista de alumnos inscritos por evento y delegacion para admin, public, logueado (cuando ya está inscrito)
+router.get('/evento/lista_alumnos/campamento_delegacion/:id_evento_fk/:id_delegacion_fk', async (req, res) => {
+    try {
+        const {id_evento_fk, id_delegacion_fk} = req.params;
 
+        const {data, error} = await supabase
+            .rpc('obtener_alumnos_campamento_inscritos_delegacion', {
+                p_id_evento: id_evento_fk,
+                p_id_delegacion: id_delegacion_fk
+            });
+        
+        if (error) {
+            console.error('Error Supabase:', error);
+            return res.status(500).json({
+                message: 'Error en la consulta'
+            });
+        }
+
+        res.json(data);
+    } catch (err) {
+        console.error('Error servidor:', err);
+
+        return res.status(500).json({
+            message: 'Error interno del servidor'
+        });
+    }
+})
 
 //Obtener las categorias en ese evento ordenados
 
