@@ -9,7 +9,7 @@ router.get('/log/delegacion/campamento/campamento_inscripcion/:id_evento_fk/:id_
         const {id_evento_fk, id_delegacion_fk} = req.params;
 
         const {data, error} = await supabase
-            .rpc('suscrito_alumno_campamento', {
+            .rpc('get_campamento_inscritos', {
                 p_evento: id_evento_fk,
                 p_delegacion: id_delegacion_fk
             })
