@@ -188,7 +188,7 @@ router.put('/log/delegacion/campamento/editar/:id', async (req, res) => {
             });
         }
 
-        if (!p || !p.cedula_suscrito_alumno_campamento || p.nombre_categoria_alumno_campamento) {
+        if (!p || !p.cedula_suscrito_alumno_campamento || !p.nombre_categoria_alumno_campamento) {
             return res.status(400).json({
                 ok: false,
                 msg: 'Datos incompletos'
