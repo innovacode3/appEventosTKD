@@ -938,4 +938,44 @@ router.get('/public/evento_combate/:id_evento_fk/:delegacion', (req, res) => {
     });
 });
 
+
+/////////////////////////////////////////////// RESULTADOS GENERALES NUEVO ////////////////////////////////////
+router.get('/evento/resultadosGeneralesEvento/:id_evento', async (req, res) => {
+    const { id_evento } = req.params;
+
+    try {
+
+        const { data, error } = await supabase.rpc(
+            'get_resultados_generales_evento',
+            {
+                p_evento: Number(id_evento)
+            }
+        );
+
+        if (error) {
+            console.error(
+                'Error en RPC de resultados generales:',
+                error
+            );
+
+            return res.status(500).json({
+                error: error.message
+            });
+        }
+
+        return res.json(data);
+
+    } catch (error) {
+
+        console.error(
+            'Error consultando resultados generales:',
+            error
+        );
+
+        return res.status(500).json({
+            error: 'Error obteniendo los resultados generales'
+        });
+    }
+});
+
 module.exports = router;
