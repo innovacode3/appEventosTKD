@@ -883,27 +883,58 @@ router.get('/evento/resultadosGeneral/:id_evento_fk', (req, res) => {
 //obtener el total de los 3 tipos de melladas por nombre_delegacion de tabla para poomase 
 router.get('/public/evento_poomsae/:id_evento_fk/:delegacion', (req, res) => {
     const { id_evento_fk, delegacion } = req.params;
-    const query = `SELECT
-                        poomsae_nombre_delegacion AS delegacion,
-                        COUNT(CASE WHEN resultado = 'MEDALLA DE ORO' AND puntaje > 0 THEN 1 END) AS oro,
-                        COUNT(CASE WHEN resultado = 'MEDALLA DE PLATA' AND puntaje > 0 THEN 1 END) AS plata,
-                        COUNT(CASE WHEN resultado = 'MEDALLA DE BRONCE' AND puntaje > 0 THEN 1 END) AS bronce
-                    FROM
-                        poomsae_resultado
-                    WHERE
-                        id_evento_fk = $1 AND 
-                        REPLACE(LOWER(TRIM(poomsae_nombre_delegacion)), ' ', '') = REPLACE(LOWER($2), ' ', '')
-                    GROUP BY
-                        poomsae_nombre_delegacion;`;
+
+    const query = `
+        SELECT
+            h.poomsae_nombre_delegacion AS delegacion,
+
+            COUNT(*) FILTER (
+                WHERE UPPER(TRIM(pr.ubicacion)) = 'PRIMER LUGAR'
+                AND pr.puntaje > 0
+            ) AS oro,
+
+            COUNT(*) FILTER (
+                WHERE UPPER(TRIM(pr.ubicacion)) = 'SEGUNDO LUGAR'
+                AND pr.puntaje > 0
+            ) AS plata,
+
+            COUNT(*) FILTER (
+                WHERE UPPER(TRIM(pr.ubicacion)) IN (
+                    'TERCER LUGAR',
+                    'CUARTO LUGAR'
+                )
+                AND pr.puntaje > 0
+            ) AS bronce
+
+        FROM poomsae_resultado pr
+
+        INNER JOIN historial_resultado_poomsae h
+            ON h.id_evento = pr.id_evento_fk
+            AND h.poomsae_modalidad = pr.poomsae_modalidad
+            AND h.poomsae_categoria = pr.poomsae_categoria
+            AND h.nivel_poomsae = pr.nivel_poomsae
+            AND h.poomsae_cedula = pr.poomsae_cedula
+
+        WHERE
+            pr.id_evento_fk = $1
+            AND REPLACE(LOWER(TRIM(h.poomsae_nombre_delegacion)), ' ', '') =
+                REPLACE(LOWER(TRIM($2)), ' ', '')
+
+        GROUP BY h.poomsae_nombre_delegacion;
+    `;
+
     db.query(query, [id_evento_fk, delegacion], (error, resultado) => {
-        if (error) return console.log(error.message);
-        if (resultado.rows.length > 0) {
-            res.json(resultado.rows);
-        } else {
-            res.json('No se han encontrado registros');
+        if (error) {
+            console.error('Error al consultar medallas de Poomsae:', error);
+            return res.status(500).json({
+                mensaje: 'Error al consultar las medallas de Poomsae'
+            });
         }
+
+        res.json(resultado.rows);
     });
 });
+
 
 //obtener el total de los 3 tipos de melladas por nombre_delegacion tabla  para combate
 router.get('/public/evento_combate/:id_evento_fk/:delegacion', (req, res) => {
