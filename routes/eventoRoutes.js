@@ -694,193 +694,79 @@ router.get('/evento/delegacion/lista_alumnos_inscritos_poomsae/:id_evento_fk/:id
     }
 });
 
-// suma total de puntos por delegacion en un evento
-/*router.get('/evento/resultadosGeneral/:id_evento_fk', (req, res) => {
-    const {id_evento_fk} = req.params;
-    const query = `SELECT 
-                        delegacion,
-                        deportistas,
-                        total_puntos,
-                        CASE ranking
-                            WHEN 1 THEN '1° 🥇'  
-                            WHEN 2 THEN '2° 🥈' 
-                            WHEN 3 THEN '3° 🥉'  
-                            WHEN 4 THEN '4°'
-                            WHEN 5 THEN '5°'
-                            WHEN 6 THEN '6°' 
-                            WHEN 7 THEN '7°' 
-                            WHEN 8 THEN '8°' 
-                            WHEN 9 THEN '9°' 
-                            WHEN 10 THEN '10°'
-                            WHEN 11 THEN '11°' 
-                            WHEN 12 THEN '12°' 
-                            WHEN 13 THEN '13°' 
-                            WHEN 14 THEN '14°' 
-                            WHEN 15 THEN '15°' 
-                            WHEN 16 THEN '16°' 
-                            WHEN 17 THEN '17°' 
-                            WHEN 18 THEN '18°' 
-                            WHEN 19 THEN '19°'
-                            WHEN 20 THEN '20°'
-                            WHEN 21 THEN '21°' 
-                            WHEN 22 THEN '22°' 
-                            WHEN 23 THEN '23°' 
-                            WHEN 24 THEN '24°' 
-                            WHEN 25 THEN '25°' 
-                            WHEN 26 THEN '26°' 
-                            WHEN 27 THEN '27°' 
-                            WHEN 28 THEN '28°' 
-                            WHEN 29 THEN '29°' 
-                            WHEN 30 THEN '30°'      
-                            ELSE '-'
-                        END AS ubicacion
-                    FROM (
-                        SELECT 
-                            delegacion, 
-                            SUM(total_puntaje) AS total_puntos,
-                            SUM(num_deportistas) AS deportistas,
-                            SUM(medallas_oro) AS medallas_oro,
-                            SUM(medallas_plata) AS medallas_plata,
-                            SUM(medallas_bronce) AS medallas_bronce,
-                            DENSE_RANK() OVER (
-                                ORDER BY 
-                                    SUM(total_puntaje) DESC, 
-                                    SUM(medallas_oro) DESC, 
-                                    SUM(medallas_plata) DESC, 
-                                    SUM(medallas_bronce) DESC
-                            ) AS ranking
-                        FROM (
-                            SELECT 
-                                poomsae_nombre_delegacion AS delegacion, 
-                                SUM(puntaje) AS total_puntaje,
-                                SUM(CASE 
-                                    WHEN resultado IN ('MEDALLA DE ORO', 'MEDALLA DE PLATA', 'MEDALLA DE BRONCE') AND puntaje > 0 
-                                    THEN 1 ELSE 0 END) AS num_deportistas,
-                                SUM(CASE WHEN resultado = 'MEDALLA DE ORO' THEN 1 ELSE 0 END) AS medallas_oro,
-                                SUM(CASE WHEN resultado = 'MEDALLA DE PLATA' THEN 1 ELSE 0 END) AS medallas_plata,
-                                SUM(CASE WHEN resultado = 'MEDALLA DE BRONCE' THEN 1 ELSE 0 END) AS medallas_bronce
-                            FROM 
-                                poomsae_resultado
-                            WHERE id_evento_fk = $1
-                            GROUP BY 
-                                poomsae_nombre_delegacion
+/////////////////////////////////////////////// RESULTADOS GENERALES ////////////////////////////////////
+router.get('/evento/resultadosGeneralesEvento/:id_evento', async (req, res) => {
+    const { id_evento } = req.params;
 
-                            UNION ALL
+    try {
 
-                            SELECT 
-                                nombre_delegacion AS delegacion, 
-                                SUM(puntaje) AS total_puntaje,
-                                SUM(CASE 
-                                    WHEN resultado IN ('MEDALLA DE ORO', 'MEDALLA DE PLATA', 'MEDALLA DE BRONCE') AND puntaje > 0 
-                                    THEN 1 ELSE 0 END) AS num_deportistas,
-                                SUM(CASE WHEN resultado = 'MEDALLA DE ORO' THEN 1 ELSE 0 END) AS medallas_oro,
-                                SUM(CASE WHEN resultado = 'MEDALLA DE PLATA' THEN 1 ELSE 0 END) AS medallas_plata,
-                                SUM(CASE WHEN resultado = 'MEDALLA DE BRONCE' THEN 1 ELSE 0 END) AS medallas_bronce
-                            FROM 
-                                llaves_competidor_resultado
-                            WHERE id_evento_fk = $1
-                            GROUP BY 
-                                nombre_delegacion
-                        ) AS totales_por_tabla
-                        GROUP BY 
-                            delegacion
-                    ) AS resultados_con_ranking
-                    ORDER BY 
-                        total_puntos DESC, 
-                        medallas_oro DESC, 
-                        medallas_plata DESC, 
-                        medallas_bronce DESC;
-                    `;
-    db.query(query, [id_evento_fk],(error, resultado) => {
-        if (error) return console.log(error.message);
+        const { data, error } = await supabase.rpc(
+            'get_resultados_generales_evento',
+            {
+                p_evento: Number(id_evento)
+            }
+        );
+
+        if (error) {
+            console.error(
+                'Error en RPC de resultados generales:',
+                error
+            );
+
+            return res.status(500).json({
+                error: error.message
+            });
+        }
+
+        return res.json(data);
+
+    } catch (error) {
+
+        console.error(
+            'Error consultando resultados generales:',
+            error
+        );
+
+        return res.status(500).json({
+            error: 'Error obteniendo los resultados generales'
+        });
+    }
+});
+
+//obtener el total de los 3 tipos de melladas por nombre_delegacion tabla  para combate
+router.get('/public/evento_combate/:id_evento_fk/:delegacion', (req, res) => {
+    const { id_evento_fk, delegacion } = req.params;
+
+    const query = `
+        SELECT
+            nombre_delegacion AS delegacion,
+            COUNT(CASE WHEN resultado = 'MEDALLA DE ORO' AND puntaje > 0 THEN 1 END) AS oro,
+            COUNT(CASE WHEN resultado = 'MEDALLA DE PLATA' AND puntaje > 0 THEN 1 END) AS plata,
+            COUNT(CASE WHEN resultado = 'MEDALLA DE BRONCE' AND puntaje > 0 THEN 1 END) AS bronce
+        FROM
+            llaves_competidor_resultado
+        WHERE
+            id_evento_fk = $1 AND
+            REPLACE(LOWER(TRIM(nombre_delegacion)), ' ', '') = REPLACE(LOWER($2), ' ', '')
+        GROUP BY
+            nombre_delegacion
+    `;
+
+    db.query(query, [id_evento_fk, delegacion], (error, resultado) => {
+        if (error) {
+            console.error(error.message);
+            return res.status(500).json({ error: 'Error en la base de datos' });
+        }
+
         if (resultado.rows.length > 0) {
             res.json(resultado.rows);
         } else {
-            res.json('No hay registros');
+            res.status(404).json({ message: 'No se han encontrado registros' });
         }
-    });
-});*/
-
-router.get('/evento/resultadosGeneral/:id_evento_fk', (req, res) => {
-    const { id_evento_fk } = req.params;
-
-    // 👇 NUEVO: recibir ajustes
-    let extras = {};
-    try {
-        extras = req.query.extra ? JSON.parse(req.query.extra) : {};
-    } catch (e) {
-        extras = {};
-    }
-
-    const query = `
-        SELECT 
-            delegacion,
-            deportistas,
-            total_puntos,
-            medallas_oro,
-            medallas_plata,
-            medallas_bronce
-        FROM (
-            SELECT 
-                delegacion, 
-                SUM(total_puntaje) AS total_puntos,
-                SUM(num_deportistas) AS deportistas,
-                SUM(medallas_oro) AS medallas_oro,
-                SUM(medallas_plata) AS medallas_plata,
-                SUM(medallas_bronce) AS medallas_bronce
-            FROM (
-                SELECT 
-                    nombre_delegacion AS delegacion, 
-                    SUM(puntaje) AS total_puntaje,
-                    SUM(CASE 
-                        WHEN resultado IN ('MEDALLA DE ORO','MEDALLA DE PLATA','MEDALLA DE BRONCE') 
-                        AND puntaje > 0 THEN 1 ELSE 0 END) AS num_deportistas,
-                    SUM(CASE WHEN resultado = 'MEDALLA DE ORO' THEN 1 ELSE 0 END) AS medallas_oro,
-                    SUM(CASE WHEN resultado = 'MEDALLA DE PLATA' THEN 1 ELSE 0 END) AS medallas_plata,
-                    SUM(CASE WHEN resultado = 'MEDALLA DE BRONCE' THEN 1 ELSE 0 END) AS medallas_bronce
-                FROM llaves_competidor_resultado
-                WHERE id_evento_fk = $1
-                GROUP BY nombre_delegacion
-            ) AS base
-            GROUP BY delegacion
-        ) AS resultados
-    `;
-
-    db.query(query, [id_evento_fk], (error, resultado) => {
-        if (error) return console.log(error.message);
-
-        let rows = resultado.rows || [];
-
-        // 🔥 APLICAR AJUSTES
-        rows = rows.map(r => {
-            const ajuste = extras[r.delegacion] || 0;
-            return {
-                ...r,
-                total_puntos: Number(r.total_puntos) + ajuste
-            };
-        });
-
-        // 🔥 RECALCULAR RANKING
-        rows.sort((a, b) => {
-            if (b.total_puntos !== a.total_puntos)
-                return b.total_puntos - a.total_puntos;
-            if (b.medallas_oro !== a.medallas_oro)
-                return b.medallas_oro - a.medallas_oro;
-            if (b.medallas_plata !== a.medallas_plata)
-                return b.medallas_plata - a.medallas_plata;
-            return b.medallas_bronce - a.medallas_bronce;
-        });
-
-        rows = rows.map((r, i) => ({
-            ...r,
-            ubicacion: `${i + 1}°`
-        }));
-
-        res.json(rows);
     });
 });
 
-//obtener el total de los 3 tipos de melladas por nombre_delegacion de tabla para poomase 
+//obtener el total de los 3 tipos de melladas por nombre_delegacion de tabla para poomsae 
 router.get('/public/evento_poomsae/:id_evento_fk/:delegacion', (req, res) => {
     const { id_evento_fk, delegacion } = req.params;
 
@@ -935,78 +821,5 @@ router.get('/public/evento_poomsae/:id_evento_fk/:delegacion', (req, res) => {
     });
 });
 
-
-//obtener el total de los 3 tipos de melladas por nombre_delegacion tabla  para combate
-router.get('/public/evento_combate/:id_evento_fk/:delegacion', (req, res) => {
-    const { id_evento_fk, delegacion } = req.params;
-
-    const query = `
-        SELECT
-            nombre_delegacion AS delegacion,
-            COUNT(CASE WHEN resultado = 'MEDALLA DE ORO' AND puntaje > 0 THEN 1 END) AS oro,
-            COUNT(CASE WHEN resultado = 'MEDALLA DE PLATA' AND puntaje > 0 THEN 1 END) AS plata,
-            COUNT(CASE WHEN resultado = 'MEDALLA DE BRONCE' AND puntaje > 0 THEN 1 END) AS bronce
-        FROM
-            llaves_competidor_resultado
-        WHERE
-            id_evento_fk = $1 AND
-            REPLACE(LOWER(TRIM(nombre_delegacion)), ' ', '') = REPLACE(LOWER($2), ' ', '')
-        GROUP BY
-            nombre_delegacion
-    `;
-
-    db.query(query, [id_evento_fk, delegacion], (error, resultado) => {
-        if (error) {
-            console.error(error.message);
-            return res.status(500).json({ error: 'Error en la base de datos' });
-        }
-
-        if (resultado.rows.length > 0) {
-            res.json(resultado.rows);
-        } else {
-            res.status(404).json({ message: 'No se han encontrado registros' });
-        }
-    });
-});
-
-
-/////////////////////////////////////////////// RESULTADOS GENERALES NUEVO ////////////////////////////////////
-router.get('/evento/resultadosGeneralesEvento/:id_evento', async (req, res) => {
-    const { id_evento } = req.params;
-
-    try {
-
-        const { data, error } = await supabase.rpc(
-            'get_resultados_generales_evento',
-            {
-                p_evento: Number(id_evento)
-            }
-        );
-
-        if (error) {
-            console.error(
-                'Error en RPC de resultados generales:',
-                error
-            );
-
-            return res.status(500).json({
-                error: error.message
-            });
-        }
-
-        return res.json(data);
-
-    } catch (error) {
-
-        console.error(
-            'Error consultando resultados generales:',
-            error
-        );
-
-        return res.status(500).json({
-            error: 'Error obteniendo los resultados generales'
-        });
-    }
-});
 
 module.exports = router;
