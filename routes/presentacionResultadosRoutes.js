@@ -21,7 +21,7 @@ router.get('/log/administrador/resultadosCompetidor/obtenerResultados/:id_evento
             END AS ubicacion
         FROM llaves_competidor_resultado
         WHERE id_evento_fk = $1 AND nivel = $2 AND nombre_categoria = $3
-              AND peso_categoria = $4 AND genero = $5 AND ubicacion <> 'NADA'
+              AND peso_categoria = $4 AND genero = $5
         ORDER BY
             puntaje DESC,
             CASE 
@@ -29,7 +29,13 @@ router.get('/log/administrador/resultadosCompetidor/obtenerResultados/:id_evento
                 WHEN ubicacion = 'SEGUNDO LUGAR' THEN 2
                 WHEN ubicacion = 'TERCER LUGAR' THEN 3
                 WHEN ubicacion = 'CUARTO LUGAR' THEN 4
-                ELSE 5
+                WHEN ubicacion = 'QUINTO LUGAR' THEN 5
+                WHEN ubicacion = 'SEXTO LUGAR' THEN 6
+                WHEN ubicacion = 'SEPTIMO LUGAR' THEN 7
+                WHEN ubicacion = 'OCTAVO LUGAR' THEN 8
+                WHEN ubicacion = 'NOVENO LUGAR' THEN 9
+                WHEN ubicacion = 'DECIMO LUGAR' THEN 10
+                ELSE 11
             END ASC
     `;
 
@@ -159,7 +165,7 @@ router.get('/log/administrador/resultados/listar/:id_evento_fk/:nivel/:genero/:n
     // Para el orden de peso_categoria, PostgreSQL no soporta `FIELD` como MySQL, entonces usamos `CASE`
     const sql = `
         SELECT * FROM llaves_competidor_resultado
-        WHERE id_evento_fk = $1 AND nivel = $2 AND genero = $3 AND nombre_categoria = $4 AND ubicacion != 'NADA'
+        WHERE id_evento_fk = $1 AND nivel = $2 AND genero = $3 AND nombre_categoria = $4
         ORDER BY
             puntaje DESC,
             CASE 
@@ -167,7 +173,13 @@ router.get('/log/administrador/resultados/listar/:id_evento_fk/:nivel/:genero/:n
                 WHEN ubicacion = 'SEGUNDO LUGAR' THEN 2
                 WHEN ubicacion = 'TERCER LUGAR' THEN 3
                 WHEN ubicacion = 'CUARTO LUGAR' THEN 4
-                ELSE 5
+                WHEN ubicacion = 'QUINTO LUGAR' THEN 5
+                WHEN ubicacion = 'SEXTO LUGAR' THEN 6
+                WHEN ubicacion = 'SEPTIMO LUGAR' THEN 7
+                WHEN ubicacion = 'OCTAVO LUGAR' THEN 8
+                WHEN ubicacion = 'NOVENO LUGAR' THEN 9
+                WHEN ubicacion = 'DECIMO LUGAR' THEN 10
+                ELSE 11
             END ASC`;
     db.query(sql, [id_evento_fk, nivel, genero, nombre_categoria], (err, result) => {
         if (err) {
